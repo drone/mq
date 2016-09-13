@@ -1,0 +1,13 @@
+Lightweight message broker written in the Go programming language.
+
+Documentation:
+
+     http://mq.drone.io
+
+Installation:
+
+     docker run -p 1999:1999 drone/mq
+
+Developer Channel:
+
+     https://gitter.im/drone/mq

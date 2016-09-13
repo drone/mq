@@ -1,0 +1,29 @@
+workspace:
+  base: /go
+  path: src/github.com/drone/mq
+
+pipeline:
+  test:
+    image: golang:1.7.1-alpine
+    commands: go test $(go list ./... | grep -v /vendor/)
+
+  build:
+    image: golang:1.7.1-alpine
+    environment:
+      - CGO_ENABLED=0
+    commands:
+      - go install github.com/drone/mq/cmd/mq
+      - cp /go/bin/mq .
+
+  docker:
+    image: plugins/docker
+    repo: drone/mq
+    tags: [ latest, 1.0, 1.0.0 ]
+    when:
+      branch: master
+      event: push
+
+  gitter:
+    image: plugins/gitter
+    when:
+      status: [ success, failure ]
