@@ -23,7 +23,7 @@ type BoolExpr interface {
 type (
 	// ComparisonExpr represents a two-value comparison expression.
 	ComparisonExpr struct {
-		Operator    string
+		Operator    Operator
 		Left, Right ValExpr
 	}
 
@@ -49,7 +49,7 @@ type (
 
 	// BasicLit represents a basic literal.
 	BasicLit struct {
-		Kind  string // INT, REAL, TEXT
+		Kind  Literal // INT, REAL, TEXT
 		Value []byte
 	}
 
@@ -59,24 +59,32 @@ type (
 	}
 )
 
+// Operator identifies the type of operator.
+type Operator int
+
 // Comparison operators.
 const (
-	EqualStr        = "="
-	LessThanStr     = "<"
-	GreaterThanStr  = ">"
-	LessEqualStr    = "<="
-	GreaterEqualStr = ">="
-	NotEqualStr     = "!="
-	InStr           = "in"
-	NotInStr        = "not in"
+	Eq Operator = iota
+	Lt
+	Lte
+	Gt
+	Gte
+	Neq
+	In
+	Re
+	NotIn
+	NotRe
 )
 
-// Literal types.
+// Literal identifies the type of literal.
+type Literal int
+
+// The list of possible literal kinds.
 const (
-	BoolStr = "BOOLEAN"
-	IntStr  = "INTEGER"
-	RealStr = "REAL"
-	TextStr = "TEXT"
+	Bool Literal = iota
+	Int
+	Real
+	Text
 )
 
 // node() defines the node in a parse tree

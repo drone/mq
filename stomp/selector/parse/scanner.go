@@ -5,68 +5,18 @@ import (
 	"unicode/utf8"
 )
 
-// Scanner implements a lexical scanner that reads Unicode characters
+// scanner implements a lexical scanner that reads unicode characters
 // and tokens from a raw buffer.
-type Scanner struct {
+type scanner struct {
 	buf   []byte
 	pos   int
 	start int
 	width int
 }
 
-// NewScanner returns a new instance of Scanner.
-func NewScanner(buf []byte) *Scanner {
-	return &Scanner{buf: buf}
-}
-
-func (s *Scanner) read() rune {
-	if s.pos >= len(s.buf) {
-		s.width = 0
-		return eof
-	}
-	r, w := utf8.DecodeRune(s.buf[s.pos:])
-	s.width = w
-	s.pos += s.width
-	return r
-}
-
-func (s *Scanner) unread() {
-	s.pos -= s.width
-}
-
-func (s *Scanner) ignore() {
-	s.start = s.pos
-}
-
-// Bytes returns the bytes corresponding to the most recently scanned
-// token. Valid after calling Scan().
-func (s *Scanner) Bytes() []byte {
-	return s.buf[s.start:s.pos]
-}
-
-// String returns the bytes corresponding to the most recently scanned
-// token. Valid after calling Scan().
-func (s *Scanner) String() string {
-	return string(s.Bytes())
-}
-
-// Reset resets the scanner buffer.
-func (s *Scanner) Reset(buf []byte) {
-	s.buf = buf
-	s.pos = 0
-	s.start = 0
-	s.width = 0
-}
-
-// Pos returns the position of the character immediately after the
-// character or token returned by the last call to Scan.
-func (s *Scanner) Pos() int {
-	return s.pos
-}
-
-// Scan reads the next token or Unicode character from source and
+// scan reads the next token or Unicode character from source and
 // returns it. It returns EOF at the end of the source.
-func (s *Scanner) Scan() Token {
+func (s *scanner) scan() Token {
 	s.start = s.pos
 	s.skipWhitespace()
 
@@ -100,7 +50,21 @@ func (s *Scanner) Scan() Token {
 	return ILLEGAL
 }
 
-func (s *Scanner) scanIdent() Token {
+// bytes returns the bytes corresponding to the most recently scanned
+// token. Valid after calling Scan().
+func (s *scanner) bytes() []byte {
+	return s.buf[s.start:s.pos]
+}
+
+// init initializes a scanner with a new buffer and returns s.
+func (s *scanner) init(buf []byte) {
+	s.buf = buf
+	s.pos = 0
+	s.start = 0
+	s.width = 0
+}
+
+func (s *scanner) scanIdent() Token {
 	for {
 		if r := s.read(); r == eof {
 			break
@@ -110,7 +74,7 @@ func (s *Scanner) scanIdent() Token {
 		}
 	}
 
-	ident := s.Bytes()
+	ident := s.bytes()
 	switch string(ident) {
 	case "NOT", "not":
 		return NOT
@@ -133,7 +97,7 @@ func (s *Scanner) scanIdent() Token {
 	return IDENT
 }
 
-func (s *Scanner) scanQuote() (tok Token) {
+func (s *scanner) scanQuote() (tok Token) {
 	s.read() // consume first quote
 
 	for {
@@ -146,7 +110,7 @@ func (s *Scanner) scanQuote() (tok Token) {
 	return TEXT
 }
 
-func (s *Scanner) scanNumber() Token {
+func (s *scanner) scanNumber() Token {
 	for {
 		if r := s.read(); r == eof {
 			break
@@ -158,26 +122,26 @@ func (s *Scanner) scanNumber() Token {
 	return INTEGER
 }
 
-func (s *Scanner) scanCompare() (tok Token) {
+func (s *scanner) scanCompare() (tok Token) {
 	switch s.read() {
 	case '=':
-		tok = EQL
+		tok = EQ
 	case '!':
 		tok = NEQ
 	case '>':
-		tok = GTR
+		tok = GT
 	case '<':
-		tok = LSS
+		tok = LT
 	}
 
 	r := s.read()
 	switch {
-	case tok == GTR && r == '=':
-		tok = GEQ
-	case tok == LSS && r == '=':
-		tok = LEQ
-	case tok == EQL && r == '=':
-		tok = EQL
+	case tok == GT && r == '=':
+		tok = GTE
+	case tok == LT && r == '=':
+		tok = LTE
+	case tok == EQ && r == '=':
+		tok = EQ
 	case tok == NEQ && r == '=':
 		tok = NEQ
 	case tok == NEQ && r != '=':
@@ -188,7 +152,7 @@ func (s *Scanner) scanCompare() (tok Token) {
 	return
 }
 
-func (s *Scanner) skipWhitespace() {
+func (s *scanner) skipWhitespace() {
 	for {
 		if r := s.read(); r == eof {
 			break
@@ -200,6 +164,26 @@ func (s *Scanner) skipWhitespace() {
 	s.ignore()
 }
 
+func (s *scanner) read() rune {
+	if s.pos >= len(s.buf) {
+		s.width = 0
+		return eof
+	}
+	r, w := utf8.DecodeRune(s.buf[s.pos:])
+	s.width = w
+	s.pos += s.width
+	return r
+}
+
+func (s *scanner) unread() {
+	s.pos -= s.width
+}
+
+func (s *scanner) ignore() {
+	s.start = s.pos
+}
+
+// eof rune sent when end of file is reached
 var eof = rune(0)
 
 func isWhitespace(r rune) bool {

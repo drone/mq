@@ -5,16 +5,16 @@ import "testing"
 func TestScanner(t *testing.T) {
 	var tokens = []Token{
 		IDENT,   // ram
-		GEQ,     // >=
+		GTE,     // >=
 		INTEGER, // 2
 		AND,     // AND
 		LPAREN,  // (
 		IDENT,   // private
-		EQL,     // ==
+		EQ,      // ==
 		FALSE,   // false
 		AND,     // AND
 		IDENT,   // admin
-		EQL,     // ==
+		EQ,      // ==
 		TRUE,    // TRUE
 		RPAREN,  // )
 		OR,      // OR
@@ -23,21 +23,22 @@ func TestScanner(t *testing.T) {
 		LPAREN,  // (
 		TEXT,    // drone
 		COMMA,   // ,
-		TEXT,    //drone-plugins
+		TEXT,    // drone-plugins
 		RPAREN,  // )
 		EOF,     // EOF
 	}
 
-	s := NewScanner(data)
+	s := new(scanner)
+	s.init(exampleLarge)
 
 	i := 0
 	for {
-		token := s.Scan()
+		token := s.scan()
 		if token == EOF {
 			break
 		}
 		if tokens[i] != token {
-			t.Errorf("Expected token %v, got %v for %q", tokens[i], token, s.String())
+			t.Errorf("Expected token %s, got %s", tokens[i], token)
 		}
 		i++
 	}
@@ -46,16 +47,16 @@ func TestScanner(t *testing.T) {
 var result Token
 
 func BenchmarkScanner(b *testing.B) {
-	s := NewScanner(data)
+	s := new(scanner)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		s.Reset(data)
+		s.init(exampleSmall)
 
 	scanner:
 		for {
-			result = s.Scan()
+			result = s.scan()
 			if result == EOF {
 				break scanner
 			}
@@ -63,7 +64,9 @@ func BenchmarkScanner(b *testing.B) {
 	}
 }
 
-var data = []byte(`
+var exampleSmall = []byte(`ram >= 2 AND platform == 'linux/amd64'`)
+
+var exampleLarge = []byte(`
 ram >= 2 AND
 (private == false AND admin = TRUE) OR
 org IN ('drone', 'drone-plugins')
