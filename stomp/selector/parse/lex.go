@@ -5,9 +5,9 @@ import (
 	"unicode/utf8"
 )
 
-// scanner implements a lexical scanner that reads unicode characters
-// and tokens from a raw buffer.
-type scanner struct {
+// lexer implements a lexical scanner that reads unicode characters
+// and tokens from a byte buffer.
+type lexer struct {
 	buf   []byte
 	pos   int
 	start int
@@ -16,24 +16,24 @@ type scanner struct {
 
 // scan reads the next token or Unicode character from source and
 // returns it. It returns EOF at the end of the source.
-func (s *scanner) scan() Token {
-	s.start = s.pos
-	s.skipWhitespace()
+func (l *lexer) scan() Token {
+	l.start = l.pos
+	l.skipWhitespace()
 
-	r := s.read()
+	r := l.read()
 	switch {
 	case isIdent(r):
-		s.unread()
-		return s.scanIdent()
+		l.unread()
+		return l.scanIdent()
 	case isQuote(r):
-		s.unread()
-		return s.scanQuote()
+		l.unread()
+		return l.scanQuote()
 	case isNumeric(r):
-		s.unread()
-		return s.scanNumber()
+		l.unread()
+		return l.scanNumber()
 	case isCompare(r):
-		s.unread()
-		return s.scanCompare()
+		l.unread()
+		return l.scanCompare()
 	}
 
 	switch r {
@@ -52,29 +52,35 @@ func (s *scanner) scan() Token {
 
 // bytes returns the bytes corresponding to the most recently scanned
 // token. Valid after calling Scan().
-func (s *scanner) bytes() []byte {
-	return s.buf[s.start:s.pos]
+func (l *lexer) bytes() []byte {
+	return l.buf[l.start:l.pos]
 }
 
-// init initializes a scanner with a new buffer and returns s.
-func (s *scanner) init(buf []byte) {
-	s.buf = buf
-	s.pos = 0
-	s.start = 0
-	s.width = 0
+// string returns the string corresponding to the most recently scanned
+// token. Valid after calling Scan().
+func (l *lexer) string() string {
+	return string(l.bytes())
 }
 
-func (s *scanner) scanIdent() Token {
+// init initializes a scanner with a new buffer.
+func (l *lexer) init(buf []byte) {
+	l.buf = buf
+	l.pos = 0
+	l.start = 0
+	l.width = 0
+}
+
+func (l *lexer) scanIdent() Token {
 	for {
-		if r := s.read(); r == eof {
+		if r := l.read(); r == eof {
 			break
 		} else if !isAlphaNumeric(r) && r != '_' {
-			s.unread()
+			l.unread()
 			break
 		}
 	}
 
-	ident := s.bytes()
+	ident := l.bytes()
 	switch string(ident) {
 	case "NOT", "not":
 		return NOT
@@ -97,11 +103,11 @@ func (s *scanner) scanIdent() Token {
 	return IDENT
 }
 
-func (s *scanner) scanQuote() (tok Token) {
-	s.read() // consume first quote
+func (l *lexer) scanQuote() (tok Token) {
+	l.read() // consume first quote
 
 	for {
-		if r := s.read(); r == eof {
+		if r := l.read(); r == eof {
 			return ILLEGAL
 		} else if isQuote(r) {
 			break
@@ -110,20 +116,20 @@ func (s *scanner) scanQuote() (tok Token) {
 	return TEXT
 }
 
-func (s *scanner) scanNumber() Token {
+func (l *lexer) scanNumber() Token {
 	for {
-		if r := s.read(); r == eof {
+		if r := l.read(); r == eof {
 			break
 		} else if !isNumeric(r) {
-			s.unread()
+			l.unread()
 			break
 		}
 	}
 	return INTEGER
 }
 
-func (s *scanner) scanCompare() (tok Token) {
-	switch s.read() {
+func (l *lexer) scanCompare() (tok Token) {
+	switch l.read() {
 	case '=':
 		tok = EQ
 	case '!':
@@ -134,7 +140,7 @@ func (s *scanner) scanCompare() (tok Token) {
 		tok = LT
 	}
 
-	r := s.read()
+	r := l.read()
 	switch {
 	case tok == GT && r == '=':
 		tok = GTE
@@ -147,40 +153,53 @@ func (s *scanner) scanCompare() (tok Token) {
 	case tok == NEQ && r != '=':
 		tok = ILLEGAL
 	default:
-		s.unread()
+		l.unread()
 	}
 	return
 }
 
-func (s *scanner) skipWhitespace() {
+func (l *lexer) skipWhitespace() {
 	for {
-		if r := s.read(); r == eof {
+		if r := l.read(); r == eof {
 			break
 		} else if !isWhitespace(r) {
-			s.unread()
+			l.unread()
 			break
 		}
 	}
-	s.ignore()
+	l.ignore()
 }
 
-func (s *scanner) read() rune {
-	if s.pos >= len(s.buf) {
-		s.width = 0
+func (l *lexer) read() rune {
+	if l.pos >= len(l.buf) {
+		l.width = 0
 		return eof
 	}
-	r, w := utf8.DecodeRune(s.buf[s.pos:])
-	s.width = w
-	s.pos += s.width
+	r, w := utf8.DecodeRune(l.buf[l.pos:])
+	l.width = w
+	l.pos += l.width
 	return r
 }
 
-func (s *scanner) unread() {
-	s.pos -= s.width
+func (l *lexer) unread() {
+	l.pos -= l.width
 }
 
-func (s *scanner) ignore() {
-	s.start = s.pos
+func (l *lexer) peek() Token {
+	var (
+		pos   = l.pos
+		start = l.start
+		width = l.width
+	)
+	tok := l.scan()
+	l.pos = pos
+	l.start = start
+	l.width = width
+	return tok
+}
+
+func (l *lexer) ignore() {
+	l.start = l.pos
 }
 
 // eof rune sent when end of file is reached

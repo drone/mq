@@ -57,6 +57,11 @@ type (
 	ArrayLit struct {
 		Values []ValExpr
 	}
+
+	// Field represents a value lookup by name.
+	Field struct {
+		Name []byte
+	}
 )
 
 // Operator identifies the type of operator.
@@ -64,16 +69,18 @@ type Operator int
 
 // Comparison operators.
 const (
-	Eq Operator = iota
-	Lt
-	Lte
-	Gt
-	Gte
-	Neq
-	In
-	Re
-	NotIn
-	NotRe
+	OperatorEq Operator = iota
+	OperatorLt
+	OperatorLte
+	OperatorGt
+	OperatorGte
+	OperatorNeq
+	OperatorIn
+	OperatorRe
+	OperatorGlob
+	OperatorNotIn
+	OperatorNotRe
+	OperatorNotGlob
 )
 
 // Literal identifies the type of literal.
@@ -81,10 +88,10 @@ type Literal int
 
 // The list of possible literal kinds.
 const (
-	Bool Literal = iota
-	Int
-	Real
-	Text
+	LiteralBool Literal = iota
+	LiteralInt
+	LiteralReal
+	LiteralText
 )
 
 // node() defines the node in a parse tree
@@ -95,6 +102,7 @@ func (x *NotExpr) node()        {}
 func (x *ParenBoolExpr) node()  {}
 func (x *BasicLit) node()       {}
 func (x *ArrayLit) node()       {}
+func (x *Field) node()          {}
 
 // bool() defines the node as a boolean expression.
 func (x *ComparisonExpr) bool() {}
@@ -106,3 +114,4 @@ func (x *ParenBoolExpr) bool()  {}
 // value() defines the node as a value expression.
 func (x *BasicLit) value() {}
 func (x *ArrayLit) value() {}
+func (x *Field) value()    {}

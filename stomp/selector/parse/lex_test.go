@@ -2,7 +2,7 @@ package parse
 
 import "testing"
 
-func TestScanner(t *testing.T) {
+func TestLexer(t *testing.T) {
 	var tokens = []Token{
 		IDENT,   // ram
 		GTE,     // >=
@@ -28,12 +28,12 @@ func TestScanner(t *testing.T) {
 		EOF,     // EOF
 	}
 
-	s := new(scanner)
-	s.init(exampleLarge)
+	lex := new(lexer)
+	lex.init(exampleLarge)
 
 	i := 0
 	for {
-		token := s.scan()
+		token := lex.scan()
 		if token == EOF {
 			break
 		}
@@ -46,19 +46,19 @@ func TestScanner(t *testing.T) {
 
 var result Token
 
-func BenchmarkScanner(b *testing.B) {
-	s := new(scanner)
+func BenchmarkLexer(b *testing.B) {
+	lex := new(lexer)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		s.init(exampleSmall)
+		lex.init(exampleSmall)
 
-	scanner:
+	lexer:
 		for {
-			result = s.scan()
+			result = lex.scan()
 			if result == EOF {
-				break scanner
+				break lexer
 			}
 		}
 	}
