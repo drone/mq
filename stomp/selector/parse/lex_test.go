@@ -6,54 +6,54 @@ func TestLexer_scan(t *testing.T) {
 	tests := []struct {
 		query string
 		value string
-		token Token
+		token token
 	}{
-		// scanIdent
-		{"foo", "foo", IDENT},
-		{" foo", "foo", IDENT},
-		{"123", "123", INTEGER},
-		{"'foo'", "'foo'", TEXT},
+		// scantokenIdent
+		{"foo", "foo", tokenIdent},
+		{" foo", "foo", tokenIdent},
+		{"123", "123", tokenInteger},
+		{"'foo'", "'foo'", tokenText},
 		// scanCompare
-		{">", ">", GT},
-		{">=", ">=", GTE},
-		{"<", "<", LT},
-		{"<=", "<=", LTE},
-		{"!=", "!=", NEQ},
-		{"=", "=", EQ},
-		{"==", "==", EQ},
-		{"!>", "!>", ILLEGAL},
+		{">", ">", tokenGt},
+		{">=", ">=", tokenGte},
+		{"<", "<", tokenLt},
+		{"<=", "<=", tokenLte},
+		{"!=", "!=", tokenNeq},
+		{"=", "=", tokenEq},
+		{"==", "==", tokenEq},
+		{"!>", "!>", tokenIllegal},
 		// scanQuote
-		{"'foo'", "'foo'", TEXT},
-		{"'bar' ", "'bar'", TEXT},
-		{"'baz", "'baz", ILLEGAL},
-		// scanIdent
-		{"foo", "foo", IDENT},
-		{"foo ", "foo", IDENT},
-		{"NOT", "NOT", NOT},
-		{"AND", "AND", AND},
-		{"OR", "OR", OR},
-		{"IN", "IN", IN},
-		{"GLOB", "GLOB", GLOB},
-		{"REGEXP", "REGEXP", REGEXP},
-		{"TRUE", "TRUE", TRUE},
-		{"FALSE", "FALSE", FALSE},
+		{"'foo'", "'foo'", tokenText},
+		{"'bar' ", "'bar'", tokenText},
+		{"'baz", "'baz", tokenIllegal},
+		// scantokenIdent
+		{"foo", "foo", tokenIdent},
+		{"foo ", "foo", tokenIdent},
+		{"NOT", "NOT", tokenNot},
+		{"AND", "AND", tokenAnd},
+		{"OR", "OR", tokenOr},
+		{"IN", "IN", tokenIn},
+		{"GLOB", "GLOB", tokenGlob},
+		{"REGEXP", "REGEXP", tokenRegexp},
+		{"TRUE", "TRUE", tokenTrue},
+		{"FALSE", "FALSE", tokenFalse},
 		// scanNumber
-		{"1", "1", INTEGER},
-		{"1234 ", "1234", INTEGER},
+		{"1", "1", tokenInteger},
+		{"1234 ", "1234", tokenInteger},
 		// other
-		{"(", "(", LPAREN},
-		{")", ")", RPAREN},
-		{",", ",", COMMA},
-		{"", "", EOF},
-		{"~", "~", ILLEGAL},
+		{"(", "(", tokenLparen},
+		{")", ")", tokenRparen},
+		{",", ",", tokenComma},
+		{"", "", tokenEOF},
+		{"~", "~", tokenIllegal},
 	}
 
 	for _, test := range tests {
 		lex := new(lexer)
 		lex.init([]byte(test.query))
-		token := lex.scan()
-		if token != test.token {
-			t.Errorf("expected token %v got %v", test.token, token)
+		tok := lex.scan()
+		if tok != test.token {
+			t.Errorf("expected token %v got %v", test.token, tok)
 		}
 		if value := lex.string(); value != test.value {
 			t.Errorf("expected token value %s got %s", test.value, value)
@@ -67,11 +67,11 @@ func TestLexer_peek(t *testing.T) {
 	lex.init(buf)
 	lex.scan()
 
-	if lex.peek() != GT {
+	if lex.peek() != tokenGt {
 		t.Errorf("expected peek to return greater than token")
 	}
 	if lex.string() != "ram" {
-		t.Errorf("expected peek to return ident token")
+		t.Errorf("expected peek to return tokenIdent token")
 	}
 }
 
@@ -128,29 +128,29 @@ func TestLexer_read(t *testing.T) {
 // this is a more complex test for the lexer that parses a query
 // string with many different tokens, whitespace, new-lines, etc.
 func TestLexer(t *testing.T) {
-	var tokens = []Token{
-		IDENT,   // ram
-		GTE,     // >=
-		INTEGER, // 2
-		AND,     // AND
-		LPAREN,  // (
-		IDENT,   // private
-		EQ,      // ==
-		FALSE,   // false
-		AND,     // AND
-		IDENT,   // admin
-		EQ,      // ==
-		TRUE,    // TRUE
-		RPAREN,  // )
-		OR,      // OR
-		IDENT,   // org
-		IN,      // IN
-		LPAREN,  // (
-		TEXT,    // drone
-		COMMA,   // ,
-		TEXT,    // drone-plugins
-		RPAREN,  // )
-		EOF,     // EOF
+	var tokens = []token{
+		tokenIdent,   // ram
+		tokenGte,     // >=
+		tokenInteger, // 2
+		tokenAnd,     // AND
+		tokenLparen,  // (
+		tokenIdent,   // private
+		tokenEq,      // ==
+		tokenFalse,   // false
+		tokenAnd,     // AND
+		tokenIdent,   // admin
+		tokenEq,      // ==
+		tokenTrue,    // TRUE
+		tokenRparen,  // )
+		tokenOr,      // OR
+		tokenIdent,   // org
+		tokenIn,      // IN
+		tokenLparen,  // (
+		tokenText,    // drone
+		tokenComma,   // ,
+		tokenText,    // drone-plugins
+		tokenRparen,  // )
+		tokenEOF,     // EOF
 	}
 
 	lex := new(lexer)
@@ -158,18 +158,18 @@ func TestLexer(t *testing.T) {
 
 	i := 0
 	for {
-		token := lex.scan()
-		if token == EOF {
+		tok := lex.scan()
+		if tok == tokenEOF {
 			break
 		}
-		if tokens[i] != token {
-			t.Errorf("Expected token %v, got %v", tokens[i], token)
+		if tokens[i] != tok {
+			t.Errorf("Expected token %v, got %v", tokens[i], tok)
 		}
 		i++
 	}
 }
 
-var result Token
+var result token
 
 // this benmark tests performance and allocations. Note that the lexer
 // is currently a zero-allocation lexer. Please ensure that changes to
@@ -185,7 +185,7 @@ func BenchmarkLexer(b *testing.B) {
 	lexer:
 		for {
 			result = lex.scan()
-			if result == EOF {
+			if result == tokenEOF {
 				break lexer
 			}
 		}

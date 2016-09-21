@@ -5,9 +5,13 @@ import (
 	"unicode/utf8"
 )
 
+// token is a lexical token.
+type token uint
+
+// list of lexical tokens.
 const (
 	// special tokens
-	tokenIllegal Token = iota
+	tokenIllegal token = iota
 	tokenEOF
 
 	// identifiers and basic type literals
@@ -49,7 +53,7 @@ type lexer struct {
 
 // scan reads the next token or Unicode character from source and
 // returns it. It returns EOF at the end of the source.
-func (l *lexer) scan() Token {
+func (l *lexer) scan() token {
 	l.start = l.pos
 	l.skipWhitespace()
 
@@ -71,21 +75,21 @@ func (l *lexer) scan() Token {
 
 	switch r {
 	case eof:
-		return EOF
+		return tokenEOF
 	case '(':
-		return LPAREN
+		return tokenLparen
 	case ')':
-		return RPAREN
+		return tokenRparen
 	case ',':
-		return COMMA
+		return tokenComma
 	}
 
-	return ILLEGAL
+	return tokenIllegal
 }
 
 // peek reads the next token or Unicode character from source and
 // returns it without advancing the scanner.
-func (l *lexer) peek() Token {
+func (l *lexer) peek() token {
 	var (
 		pos   = l.pos
 		start = l.start
@@ -118,7 +122,7 @@ func (l *lexer) init(buf []byte) {
 	l.width = 0
 }
 
-func (l *lexer) scanIdent() Token {
+func (l *lexer) scanIdent() token {
 	for {
 		if r := l.read(); r == eof {
 			break
@@ -131,40 +135,40 @@ func (l *lexer) scanIdent() Token {
 	ident := l.bytes()
 	switch string(ident) {
 	case "NOT", "not":
-		return NOT
+		return tokenNot
 	case "AND", "and":
-		return AND
+		return tokenAnd
 	case "OR", "or":
-		return OR
+		return tokenOr
 	case "IN", "in":
-		return IN
+		return tokenIn
 	case "GLOB", "glob":
-		return GLOB
+		return tokenGlob
 	case "REGEXP", "regexp":
-		return REGEXP
+		return tokenRegexp
 	case "TRUE", "true":
-		return TRUE
+		return tokenTrue
 	case "FALSE", "false":
-		return FALSE
+		return tokenFalse
 	}
 
-	return IDENT
+	return tokenIdent
 }
 
-func (l *lexer) scanQuote() (tok Token) {
+func (l *lexer) scanQuote() (tok token) {
 	l.read() // consume first quote
 
 	for {
 		if r := l.read(); r == eof {
-			return ILLEGAL
+			return tokenIllegal
 		} else if isQuote(r) {
 			break
 		}
 	}
-	return TEXT
+	return tokenText
 }
 
-func (l *lexer) scanNumber() Token {
+func (l *lexer) scanNumber() token {
 	for {
 		if r := l.read(); r == eof {
 			break
@@ -173,33 +177,33 @@ func (l *lexer) scanNumber() Token {
 			break
 		}
 	}
-	return INTEGER
+	return tokenInteger
 }
 
-func (l *lexer) scanCompare() (tok Token) {
+func (l *lexer) scanCompare() (tok token) {
 	switch l.read() {
 	case '=':
-		tok = EQ
+		tok = tokenEq
 	case '!':
-		tok = NEQ
+		tok = tokenNeq
 	case '>':
-		tok = GT
+		tok = tokenGt
 	case '<':
-		tok = LT
+		tok = tokenLt
 	}
 
 	r := l.read()
 	switch {
-	case tok == GT && r == '=':
-		tok = GTE
-	case tok == LT && r == '=':
-		tok = LTE
-	case tok == EQ && r == '=':
-		tok = EQ
-	case tok == NEQ && r == '=':
-		tok = NEQ
-	case tok == NEQ && r != '=':
-		tok = ILLEGAL
+	case tok == tokenGt && r == '=':
+		tok = tokenGte
+	case tok == tokenLt && r == '=':
+		tok = tokenLte
+	case tok == tokenEq && r == '=':
+		tok = tokenEq
+	case tok == tokenNeq && r == '=':
+		tok = tokenNeq
+	case tok == tokenNeq && r != '=':
+		tok = tokenIllegal
 	default:
 		l.unread()
 	}

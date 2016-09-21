@@ -190,10 +190,9 @@ func (m mapRow) Field(name []byte) []byte {
 
 var result bool
 
+// this benchmark measures the performance of what we expect will be
+// representative of most of the real world queries that people are using.
 func BenchmarkEval(b *testing.B) {
-	// this is what we expect will be representative of most of the
-	// real world queries that people are using. we are not optimizing
-	// for complex queries.
 	buf := []byte("ram >= 2 AND platform == 'linux/amd64'")
 
 	row := mapRow(map[string]string{
@@ -219,6 +218,8 @@ func BenchmarkEval(b *testing.B) {
 	}
 }
 
+// this benchmark measures the performance of using path.Glob
+// to support the SQLITE GLOB keyword.
 func BenchmarkEvalGlob(b *testing.B) {
 	buf := []byte("platform GLOB 'linux/*'")
 
@@ -245,9 +246,9 @@ func BenchmarkEvalGlob(b *testing.B) {
 	}
 }
 
-// this bencharmk will perform poorly because we currently compile the
-// regular expression on each evaluation. Until we optimize this feature
-// it should only be used by low volume queues.
+// this benchmark measures the performance of using regexp.Regepx
+// to support the SQLITE REGEXP keyword. This performs poorly at
+// the moment because we re-compile the regexp on every evaluation.
 func BenchmarkEvalRegexp(b *testing.B) {
 	buf := []byte("platform REGEXP 'linux/(.+)'")
 

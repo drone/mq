@@ -48,9 +48,9 @@ func (t *Tree) parseExpr() BoolExpr {
 	node := t.parseComparison(left)
 
 	switch t.lex.scan() {
-	case OR:
+	case tokenOr:
 		return t.parseOr(node)
-	case AND:
+	case tokenAnd:
 		return t.parseAnd(node)
 	default:
 		return node
@@ -73,7 +73,7 @@ func (t *Tree) parseOr(left BoolExpr) BoolExpr {
 
 func (t *Tree) parseComparison(left ValExpr) BoolExpr {
 	var negate bool
-	if t.lex.peek() == NOT {
+	if t.lex.peek() == tokenNot {
 		t.lex.scan()
 		negate = true
 	}
@@ -97,6 +97,7 @@ func (t *Tree) parseComparison(left ValExpr) BoolExpr {
 	case OperatorIn, OperatorNotIn:
 		node.Right = t.parseList()
 	case OperatorRe, OperatorNotRe:
+		// TODO placeholder for custom Regexp Node
 		node.Right = t.parseVal()
 	default:
 		node.Right = t.parseVal()
@@ -106,23 +107,23 @@ func (t *Tree) parseComparison(left ValExpr) BoolExpr {
 
 func (t *Tree) parseOperator() (op Operator) {
 	switch t.lex.scan() {
-	case EQ:
+	case tokenEq:
 		return OperatorEq
-	case GT:
+	case tokenGt:
 		return OperatorGt
-	case GTE:
+	case tokenGte:
 		return OperatorGte
-	case LT:
+	case tokenLt:
 		return OperatorLt
-	case LTE:
+	case tokenLte:
 		return OperatorLte
-	case NEQ:
+	case tokenNeq:
 		return OperatorNeq
-	case IN:
+	case tokenIn:
 		return OperatorIn
-	case REGEXP:
+	case tokenRegexp:
 		return OperatorRe
-	case GLOB:
+	case tokenGlob:
 		return OperatorGlob
 	default:
 		t.errorf("illegal operator")
@@ -132,13 +133,13 @@ func (t *Tree) parseOperator() (op Operator) {
 
 func (t *Tree) parseVal() ValExpr {
 	switch t.lex.scan() {
-	case IDENT:
+	case tokenIdent:
 		node := new(Field)
 		node.Name = t.lex.bytes()
 		return node
-	case TEXT:
+	case tokenText:
 		return t.parseText()
-	case REAL, INTEGER, TRUE, FALSE:
+	case tokenReal, tokenInteger, tokenTrue, tokenFalse:
 		node := new(BasicLit)
 		node.Value = t.lex.bytes()
 		return node
@@ -149,7 +150,7 @@ func (t *Tree) parseVal() ValExpr {
 }
 
 func (t *Tree) parseList() ValExpr {
-	if t.lex.scan() != LPAREN {
+	if t.lex.scan() != tokenLparen {
 		t.errorf("unexpected token, expecting (")
 		return nil
 	}
@@ -157,11 +158,11 @@ func (t *Tree) parseList() ValExpr {
 	for {
 		next := t.lex.peek()
 		switch next {
-		case EOF:
+		case tokenEOF:
 			t.errorf("unexpected eof, expecting )")
-		case COMMA:
+		case tokenComma:
 			t.lex.scan()
-		case RPAREN:
+		case tokenRparen:
 			t.lex.scan()
 			return node
 		default:
