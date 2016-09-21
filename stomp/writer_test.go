@@ -1,6 +1,9 @@
 package stomp
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 func TestWrite(t *testing.T) {
 
@@ -115,3 +118,31 @@ func TestWrite(t *testing.T) {
 		}
 	}
 }
+
+var resultbuf bytes.Buffer
+
+func BenchmarkWrite(b *testing.B) {
+
+	msg := NewMessage()
+	msg.Method = MethodSend
+	msg.Dest = []byte("/queue/foo")
+	msg.Body = []byte("foo\nbar\nbaz\nqux")
+	defer msg.Release()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		resultbuf.Reset()
+		writeTo(&resultbuf, msg)
+	}
+}
+
+var sampleMessage = []byte(`PUBLISH
+version:1.0.0
+destination:/topic/test
+
+foo
+bar
+baz
+qux`)
