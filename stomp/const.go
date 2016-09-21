@@ -1,5 +1,8 @@
 package stomp
 
+// STOMP protocol version.
+var STOMP = []byte("1.2")
+
 // STOMP protocol methods.
 var (
 	MethodStomp       = []byte("STOMP")

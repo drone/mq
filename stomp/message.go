@@ -1,6 +1,9 @@
 package stomp
 
-import "sync"
+import (
+	"bytes"
+	"sync"
+)
 
 // Message represents a parsed STOMP message.
 type Message struct {
@@ -58,18 +61,16 @@ func (m *Message) Apply(opts ...MessageOption) {
 // }
 
 // Bytes returns the Message in raw byte format.
-// func (m *Message) Bytes() []byte {
-// 	var buf bytes.Buffer
-// 	writeTo(&buf, m)
-// 	return buf.Bytes()
-// }
+func (m *Message) Bytes() []byte {
+	var buf bytes.Buffer
+	writeTo(&buf, m)
+	return buf.Bytes()
+}
 
 // String returns the Message in string format.
-// func (m *Message) String() string {
-// 	var buf bytes.Buffer
-// 	writeTo(&buf, m)
-// 	return buf.String()
-// }
+func (m *Message) String() string {
+	return string(m.Bytes())
+}
 
 // Release releases the message back to the message pool.
 func (m *Message) Release() {
