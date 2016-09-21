@@ -56,9 +56,9 @@ func (m *Message) Apply(opts ...MessageOption) {
 }
 
 // Parse parses the raw bytes into the message.
-// func (m *Message) Parse(b []byte) error {
-// 	return read(b, m)
-// }
+func (m *Message) Parse(b []byte) error {
+	return read(b, m)
+}
 
 // Bytes returns the Message in raw byte format.
 func (m *Message) Bytes() []byte {

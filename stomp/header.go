@@ -39,12 +39,16 @@ func (h *Header) Field(name []byte) []byte {
 
 // Add appens the key value pair to the header.
 func (h *Header) Add(name, data []byte) {
-	if h.itemc > defaultHeaderLen-1 {
-		h.items = append(h.items, item{})
-	}
+	h.grow()
 	h.items[h.itemc].name = name
 	h.items[h.itemc].data = data
 	h.itemc++
+}
+
+func (h *Header) grow() {
+	if h.itemc > defaultHeaderLen-1 {
+		h.items = append(h.items, item{})
+	}
 }
 
 func (h *Header) reset() {

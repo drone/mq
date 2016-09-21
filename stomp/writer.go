@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	newline    = []byte{'\r', '\n'}
+	crlf       = []byte{'\r', '\n'}
+	newline    = []byte{'\n'}
 	separator  = []byte{':'}
 	terminator = []byte{0}
 )
@@ -156,7 +157,7 @@ func writeTo(w io.Writer, m *Message) {
 
 	// receipt header
 	if includeReceiptHeader(m) {
-		w.Write(HeaderReceiptID)
+		w.Write(HeaderReceipt)
 		w.Write(separator)
 		w.Write(m.Receipt)
 		w.Write(newline)
