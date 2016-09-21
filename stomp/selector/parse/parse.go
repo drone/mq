@@ -44,6 +44,11 @@ func (t *Tree) errorf(format string, args ...interface{}) {
 }
 
 func (t *Tree) parseExpr() BoolExpr {
+	if t.lex.peek() == tokenNot {
+		t.lex.scan()
+		return t.parseNot()
+	}
+
 	left := t.parseVal()
 	node := t.parseComparison(left)
 
@@ -68,6 +73,12 @@ func (t *Tree) parseOr(left BoolExpr) BoolExpr {
 	node := new(OrExpr)
 	node.Left = left
 	node.Right = t.parseExpr()
+	return node
+}
+
+func (t *Tree) parseNot() BoolExpr {
+	node := new(NotExpr)
+	node.Expr = t.parseExpr()
 	return node
 }
 

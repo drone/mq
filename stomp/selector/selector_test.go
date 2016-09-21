@@ -118,6 +118,16 @@ var evalTests = []struct {
 		match: true,
 	},
 	{
+		query: "NOT cores > 1", // > 1 core
+		param: map[string]string{"cores": "2"},
+		match: false,
+	},
+	{
+		query: "NOT cores < 2", // > 1 core
+		param: map[string]string{"cores": "2"},
+		match: true,
+	},
+	{
 		query: "platform == 'linux/amd64'",
 		param: map[string]string{"platform": "linux/amd64"},
 		match: true,

@@ -149,6 +149,33 @@ func TestParse(t *testing.T) {
 				},
 			},
 		},
+		{
+			query: "NOT ram < 2",
+			root: &NotExpr{
+				Expr: &ComparisonExpr{
+					Operator: OperatorLt,
+					Left:     &Field{Name: []byte("ram")},
+					Right:    &BasicLit{Value: []byte("2")},
+				},
+			},
+		},
+		{
+			query: "ram > 1 AND NOT cpu <= 2",
+			root: &AndExpr{
+				Left: &ComparisonExpr{
+					Operator: OperatorGt,
+					Left:     &Field{Name: []byte("ram")},
+					Right:    &BasicLit{Value: []byte("1")},
+				},
+				Right: &NotExpr{
+					Expr: &ComparisonExpr{
+						Operator: OperatorLte,
+						Left:     &Field{Name: []byte("cpu")},
+						Right:    &BasicLit{Value: []byte("2")},
+					},
+				},
+			},
+		},
 	}
 
 	for _, want := range tests {
