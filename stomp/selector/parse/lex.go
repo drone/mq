@@ -50,6 +50,21 @@ func (l *lexer) scan() Token {
 	return ILLEGAL
 }
 
+// peek reads the next token or Unicode character from source and
+// returns it without advancing the scanner.
+func (l *lexer) peek() Token {
+	var (
+		pos   = l.pos
+		start = l.start
+		width = l.width
+	)
+	tok := l.scan()
+	l.pos = pos
+	l.start = start
+	l.width = width
+	return tok
+}
+
 // bytes returns the bytes corresponding to the most recently scanned
 // token. Valid after calling Scan().
 func (l *lexer) bytes() []byte {
@@ -74,7 +89,7 @@ func (l *lexer) scanIdent() Token {
 	for {
 		if r := l.read(); r == eof {
 			break
-		} else if !isAlphaNumeric(r) && r != '_' {
+		} else if !isIdent(r) {
 			l.unread()
 			break
 		}
@@ -185,19 +200,6 @@ func (l *lexer) unread() {
 	l.pos -= l.width
 }
 
-func (l *lexer) peek() Token {
-	var (
-		pos   = l.pos
-		start = l.start
-		width = l.width
-	)
-	tok := l.scan()
-	l.pos = pos
-	l.start = start
-	l.width = width
-	return tok
-}
-
 func (l *lexer) ignore() {
 	l.start = l.pos
 }
@@ -213,10 +215,6 @@ func isNumeric(r rune) bool {
 	return unicode.IsDigit(r) || r == '.'
 }
 
-func isAlphaNumeric(r rune) bool {
-	return r == '-' || r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
-}
-
 func isQuote(r rune) bool {
 	return r == '\''
 }
@@ -226,5 +224,5 @@ func isCompare(r rune) bool {
 }
 
 func isIdent(r rune) bool {
-	return unicode.IsLetter(r) || r == '_' || r == '-' || r == '[' || r == ']'
+	return unicode.IsLetter(r) || r == '_' || r == '-'
 }

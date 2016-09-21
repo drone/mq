@@ -8,7 +8,6 @@ import (
 // Tree is the representation of a single parsed SQL statement.
 type Tree struct {
 	Root BoolExpr
-	text string
 
 	// Parsing only; cleared after parse.
 	lex *lexer

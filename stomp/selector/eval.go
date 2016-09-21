@@ -126,7 +126,11 @@ func (s *state) evalRegexp(node *parse.ComparisonExpr) bool {
 
 func (s *state) evalIn(node *parse.ComparisonExpr) bool {
 	left := s.toValue(node.Left)
-	right := node.Right.(*parse.ArrayLit) // TODO unchecked
+	right, ok := node.Right.(*parse.ArrayLit)
+	if !ok {
+		panic("expected array literal")
+	}
+
 	for _, expr := range right.Values {
 		if bytes.Equal(left, s.toValue(expr)) {
 			return true
@@ -146,14 +150,9 @@ func (s *state) toValue(expr parse.ValExpr) []byte {
 	}
 }
 
-//
-// func (s *state) evalIn(node *parse.InNode) bool {
-// 	text := s.toValue(node.Left)
-// 	for _, val := range node.Values {
-// 		if val == text {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-//
+// errRecover is the handler that turns panics into returns.
+func errRecover(err *error) {
+	if e := recover(); e != nil {
+		*err = e.(error)
+	}
+}

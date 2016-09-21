@@ -18,6 +18,7 @@ func Parse(b []byte) (selector *Selector, err error) {
 // if all conditions are satisfied. If a runtime error is experiences a false
 // value is returned along with an error message.
 func (s *Selector) Eval(row Row) (match bool, err error) {
+	defer errRecover(&err)
 	state := &state{vars: row}
 	match = state.walk(s.Root)
 	return
