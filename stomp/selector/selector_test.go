@@ -23,6 +23,11 @@ var evalTests = []struct {
 		match: false,
 	},
 	{
+		query: "repo-name != 'drone'",
+		param: map[string]string{"repo-name": "drone/drone"},
+		match: true,
+	},
+	{
 		query: "repo-name == 'drone' AND repo-private == true",
 		param: map[string]string{"repo-name": "drone", "repo-private": "true"},
 		match: true,
@@ -81,6 +86,26 @@ var evalTests = []struct {
 		query: "ram >= 2", // >= 2MB RAM
 		param: map[string]string{"ram": "2"},
 		match: true,
+	},
+	{
+		query: "ram < 4", // < 4MB RAM
+		param: map[string]string{"ram": "3.5"},
+		match: true,
+	},
+	{
+		query: "ram <= 4", // <= 4MB RAM
+		param: map[string]string{"ram": "4"},
+		match: true,
+	},
+	{
+		query: "ram <= 3.5", // <= 4MB RAM
+		param: map[string]string{"ram": "3.5"},
+		match: true,
+	},
+	{
+		query: "ram <= 3", // <= 3MB RAM
+		param: map[string]string{"ram": "3.5"},
+		match: false,
 	},
 	{
 		query: "cores > 1", // > 1 core
@@ -161,4 +186,90 @@ type mapRow map[string]string
 
 func (m mapRow) Field(name []byte) []byte {
 	return []byte(m[string(name)])
+}
+
+var result bool
+
+func BenchmarkEval(b *testing.B) {
+	// this is what we expect will be representative of most of the
+	// real world queries that people are using. we are not optimizing
+	// for complex queries.
+	buf := []byte("ram >= 2 AND platform == 'linux/amd64'")
+
+	row := mapRow(map[string]string{
+		"ram":      "4",
+		"platform": "linux/amd64",
+	})
+
+	selector, err := Parse(buf)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		result, err = selector.Eval(row)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if result == false {
+			b.Fatalf("expected eval returns true")
+		}
+	}
+}
+
+func BenchmarkEvalGlob(b *testing.B) {
+	buf := []byte("platform GLOB 'linux/*'")
+
+	row := mapRow(map[string]string{
+		"ram":      "4",
+		"platform": "linux/amd64",
+	})
+
+	selector, err := Parse(buf)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		result, err = selector.Eval(row)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if result == false {
+			b.Fatalf("expected eval returns true")
+		}
+	}
+}
+
+// this bencharmk will perform poorly because we currently compile the
+// regular expression on each evaluation. Until we optimize this feature
+// it should only be used by low volume queues.
+func BenchmarkEvalRegexp(b *testing.B) {
+	buf := []byte("platform REGEXP 'linux/(.+)'")
+
+	row := mapRow(map[string]string{
+		"ram":      "4",
+		"platform": "linux/amd64",
+	})
+
+	selector, err := Parse(buf)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		result, err = selector.Eval(row)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if result == false {
+			b.Fatalf("expected eval returns true")
+		}
+	}
 }

@@ -53,7 +53,7 @@ func TestLexer_scan(t *testing.T) {
 		lex.init([]byte(test.query))
 		token := lex.scan()
 		if token != test.token {
-			t.Errorf("expected token %s got %s", test.token, token)
+			t.Errorf("expected token %v got %v", test.token, token)
 		}
 		if value := lex.string(); value != test.value {
 			t.Errorf("expected token value %s got %s", test.value, value)
@@ -163,7 +163,7 @@ func TestLexer(t *testing.T) {
 			break
 		}
 		if tokens[i] != token {
-			t.Errorf("Expected token %s, got %s", tokens[i], token)
+			t.Errorf("Expected token %v, got %v", tokens[i], token)
 		}
 		i++
 	}

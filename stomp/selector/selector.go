@@ -25,6 +25,10 @@ func (s *Selector) Eval(row Row) (match bool, err error) {
 }
 
 // Row defines a row of columnar data.
+//
+// Note that the field name and field values are represented as []byte
+// since stomp header names and values are represented as []byte to avoid
+// extra allocations when converting from []byte to string.
 type Row interface {
 	Field([]byte) []byte
 }

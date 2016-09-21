@@ -5,6 +5,39 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	// special tokens
+	tokenIllegal Token = iota
+	tokenEOF
+
+	// identifiers and basic type literals
+	tokenIdent
+	tokenText
+	tokenReal
+	tokenInteger
+
+	// operators and delimiters
+	tokenEq     // ==
+	tokenLt     // <
+	tokenLte    // <=
+	tokenGt     // >
+	tokenGte    // >=
+	tokenNeq    // !=
+	tokenComma  // ,
+	tokenLparen // (
+	tokenRparen // )
+
+	// keywords
+	tokenNot
+	tokenAnd
+	tokenOr
+	tokenIn
+	tokenGlob
+	tokenRegexp
+	tokenTrue
+	tokenFalse
+)
+
 // lexer implements a lexical scanner that reads unicode characters
 // and tokens from a byte buffer.
 type lexer struct {

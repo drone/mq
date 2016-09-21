@@ -39,7 +39,7 @@ func (t *Tree) recover(err *error) {
 // errorf formats the error and terminates processing.
 func (t *Tree) errorf(format string, args ...interface{}) {
 	t.Root = nil
-	format = fmt.Sprintf("selector: parse error:%d: %s", t.lex.pos, format)
+	format = fmt.Sprintf("selector: parse error:%d: %s", t.lex.start, format)
 	panic(fmt.Errorf(format, args...))
 }
 
@@ -125,7 +125,7 @@ func (t *Tree) parseOperator() (op Operator) {
 	case GLOB:
 		return OperatorGlob
 	default:
-		t.errorf("unexpected operator")
+		t.errorf("illegal operator")
 		return
 	}
 }
@@ -136,20 +136,21 @@ func (t *Tree) parseVal() ValExpr {
 		node := new(Field)
 		node.Name = t.lex.bytes()
 		return node
-	case TEXT, REAL, INTEGER, TRUE, FALSE:
+	case TEXT:
+		return t.parseText()
+	case REAL, INTEGER, TRUE, FALSE:
 		node := new(BasicLit)
 		node.Value = t.lex.bytes()
-		node.Value = unquote(node.Value)
 		return node
 	default:
-		t.errorf("unexpected value")
+		t.errorf("illegal value expression")
 		return nil
 	}
 }
 
 func (t *Tree) parseList() ValExpr {
 	if t.lex.scan() != LPAREN {
-		t.errorf("expecting left paren")
+		t.errorf("unexpected token, expecting (")
 		return nil
 	}
 	node := new(ArrayLit)
@@ -157,7 +158,7 @@ func (t *Tree) parseList() ValExpr {
 		next := t.lex.peek()
 		switch next {
 		case EOF:
-			t.errorf("unexpected eof")
+			t.errorf("unexpected eof, expecting )")
 		case COMMA:
 			t.lex.scan()
 		case RPAREN:
@@ -170,19 +171,41 @@ func (t *Tree) parseList() ValExpr {
 	}
 }
 
-// simple helper function to unquote a literal.
-func unquote(buf []byte) []byte {
-	n := len(buf)
-	if n < 2 {
-		return buf
-	}
-	quote := buf[0]
-	if quote != '\'' {
-		return buf
-	}
-	if quote != buf[n-1] {
-		return buf
-	}
-	buf = buf[1 : n-1]
-	return bytes.Replace(buf, []byte("\\'"), []byte("'"), -1)
+func (t *Tree) parseText() ValExpr {
+	node := new(BasicLit)
+	node.Value = t.lex.bytes()
+
+	// this is where we strip the starting and ending quote
+	// and unescape the string. On the surface this might look
+	// like it is subject to index out of bounds errors but
+	// it is safe because it is already verified by the lexer.
+	node.Value = node.Value[1 : len(node.Value)-1]
+	node.Value = bytes.Replace(node.Value, quoteEscaped, quoteUnescaped, -1)
+	return node
 }
+
+// errString indicates the string literal does no have the right syntax.
+// var errString = errors.New("invalid string literal")
+
+var (
+	quoteEscaped   = []byte("\\'")
+	quoteUnescaped = []byte("'")
+)
+
+// unquote interprets buf as a single-quoted literal, returning the
+// value that buf quotes.
+// func unquote(buf []byte) ([]byte, error) {
+// 	n := len(buf)
+// 	if n < 2 {
+// 		return nil, errString
+// 	}
+// 	quote := buf[0]
+// 	if quote != quoteUnescaped[0] {
+// 		return nil, errString
+// 	}
+// 	if quote != buf[n-1] {
+// 		return nil, errString
+// 	}
+// 	buf = buf[1 : n-1]
+// 	return bytes.Replace(buf, quoteEscaped, quoteUnescaped, -1), nil
+// }
