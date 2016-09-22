@@ -51,8 +51,8 @@ func (p *localPeer) Send(m *Message) error {
 		return io.EOF
 	default:
 		p.outgoing <- m
+		return nil
 	}
-	return nil
 }
 
 func (p *localPeer) Close() error {
