@@ -2,7 +2,6 @@ package server
 
 import (
 	"container/list"
-	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -118,8 +117,6 @@ func (q *queue) process() error {
 				sub.session.Unlock()
 			}
 
-			fmt.Println(m)
-			fmt.Println("---")
 			sub.session.send(m)
 			q.list.Remove(e)
 		}

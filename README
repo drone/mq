@@ -6,7 +6,7 @@ Documentation:
 
 Installation:
 
-     docker run -p 1999:1999 drone/mq
+     docker run -p 9000:9000 drone/mq
 
 Developer Channel:
 
