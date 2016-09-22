@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "vbjzNeqTEIPV1W6wT5PB3OwN9Ns=",
+			"path": "github.com/kr/pretty",
+			"revision": "737b74a46c4bf788349f72cb256fed10aea4d0ac",
+			"revisionTime": "2016-07-08T21:57:48Z"
+		},
+		{
+			"checksumSHA1": "uulQHQ7IsRKqDudBC8Go9J0gtAc=",
+			"path": "github.com/kr/text",
+			"revision": "7cafcd837844e784b526369c9bce262804aebc60",
+			"revisionTime": "2016-05-04T02:26:26Z"
+		},
+		{
+			"checksumSHA1": "0Il1DbcyN359or+I4zLd6lwFirk=",
+			"path": "github.com/urfave/cli",
+			"revision": "11c134509d89c2018675f369955218a180dc7428",
+			"revisionTime": "2016-07-16T16:11:36Z"
+		}
+	],
+	"rootPath": "github.com/drone/mq"
+}
