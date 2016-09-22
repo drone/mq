@@ -5,7 +5,9 @@ workspace:
 pipeline:
   test:
     image: golang:1.7.1-alpine
-    commands: go test $(go list ./... | grep -v /vendor/)
+    commands:
+      - go test -cover -v github.com/drone/mq/stomp/...
+      - go test -cover -v github.com/drone/mq/server/...
 
   build:
     image: golang:1.7.1-alpine
