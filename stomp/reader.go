@@ -69,15 +69,15 @@ func read(input []byte, m *Message) (err error) {
 		case bytes.Equal(name, HeaderDest):
 			m.Dest = value
 		case bytes.Equal(name, HeaderExpires):
-			m.Expires = parseInt64(value)
+			m.Expires = ParseInt64(value)
 		case bytes.Equal(name, HeaderLogin):
 			m.User = value
 		case bytes.Equal(name, HeaderPass):
 			m.Pass = value
 		case bytes.Equal(name, HeaderID):
-			m.ID = parseInt64(value)
+			m.ID = ParseInt64(value)
 		case bytes.Equal(name, HeaderMessageID):
-			m.ID = parseInt64(value)
+			m.ID = ParseInt64(value)
 		case bytes.Equal(name, HeaderPersist):
 			m.Persist = value
 		case bytes.Equal(name, HeaderPrefetch):
@@ -91,7 +91,7 @@ func read(input []byte, m *Message) (err error) {
 		case bytes.Equal(name, HeaderSelector):
 			m.Selector = value
 		case bytes.Equal(name, HeaderSubscription):
-			m.Subs = parseInt64(value)
+			m.Subs = ParseInt64(value)
 		case bytes.Equal(name, HeaderVersion):
 			m.Proto = value
 		default:
@@ -110,8 +110,22 @@ const (
 	asciiNine = 57
 )
 
-// parseInt64 returns the ascii integer value.
-func parseInt64(d []byte) (n int64) {
+// ParseInt returns the ascii integer value.
+func ParseInt(d []byte) (n int) {
+	if len(d) == 0 {
+		return 0
+	}
+	for _, dec := range d {
+		if dec < asciiZero || dec > asciiNine {
+			return 0
+		}
+		n = n*10 + (int(dec) - asciiZero)
+	}
+	return n
+}
+
+// ParseInt64 returns the ascii integer value.
+func ParseInt64(d []byte) (n int64) {
 	if len(d) == 0 {
 		return 0
 	}
