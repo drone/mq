@@ -139,7 +139,7 @@ func (c *Client) Connect(opts ...MessageOption) error {
 	defer m.Release()
 
 	if !bytes.Equal(m.Method, MethodConnected) {
-		return fmt.Errorf("stomp: invalid message: expects connected")
+		return fmt.Errorf("stomp: invalid message: expect connected")
 	}
 	go c.listen()
 	return nil
