@@ -1,0 +1,236 @@
+package stomp
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"log"
+	"net"
+	"net/url"
+	"sync"
+	"time"
+)
+
+// Client defines a client connection to a STOMP server.
+type Client struct {
+	mu sync.Mutex
+
+	conn Peer
+	subs map[int64]Handler
+	wait map[string]chan struct{}
+
+	seq int64
+
+	skipVerify      bool
+	readBufferSize  int
+	writeBufferSize int
+	timeout         time.Duration
+}
+
+// New returns a new STOMP client using the given connection.
+func New(conn Peer) *Client {
+	return &Client{
+		conn: conn,
+		subs: make(map[int64]Handler),
+		wait: make(map[string]chan struct{}),
+	}
+}
+
+// Dial creates a client connection to the given target.
+func Dial(target string) (*Client, error) {
+	u, err := url.Parse(target)
+	if err != nil {
+		return nil, err
+	}
+
+	var peer Peer
+	switch u.Scheme {
+	case "tcp":
+		conn, err := net.Dial("tcp", u.Host)
+		if err != nil {
+			return nil, err
+		}
+		peer = Conn(conn)
+	default:
+		panic("invalid or unsupported STOMP scheme")
+	}
+
+	return New(peer), nil
+}
+
+// Send sends the data to the given destination.
+func (c *Client) Send(dest string, data []byte, opts ...MessageOption) error {
+	m := NewMessage()
+	m.Method = MethodSend
+	m.Dest = []byte(dest)
+	m.Body = data
+	m.Apply(opts...)
+	return c.sendMessage(m)
+}
+
+// Subscribe subscribes to the given destination.
+func (c *Client) Subscribe(dest string, handler Handler, opts ...MessageOption) (id int64, err error) {
+	id = c.incr()
+
+	m := NewMessage()
+	m.Method = MethodSubscribe
+	m.ID = id
+	m.Dest = []byte(dest)
+	m.Apply(opts...)
+
+	c.mu.Lock()
+	c.subs[id] = handler
+	c.mu.Unlock()
+
+	err = c.sendMessage(m)
+	if err != nil {
+		c.mu.Lock()
+		delete(c.subs, id)
+		c.mu.Unlock()
+		return
+	}
+	return
+}
+
+// Unsubscribe unsubscribes to the destination.
+func (c *Client) Unsubscribe(id int64, opts ...MessageOption) error {
+	c.mu.Lock()
+	delete(c.subs, id)
+	c.mu.Unlock()
+
+	m := NewMessage()
+	m.Method = MethodUnsubscribe
+	m.ID = id
+	m.Apply(opts...)
+	return c.sendMessage(m)
+}
+
+// Ack acknowledges the messages with the given id.
+func (c *Client) Ack(id int64, opts ...MessageOption) error {
+	m := NewMessage()
+	m.Method = MethodAck
+	m.ID = id
+	m.Apply(opts...)
+	return c.sendMessage(m)
+}
+
+// Nack negative-acknowledges the messages with the given id.
+func (c *Client) Nack(id int64, opts ...MessageOption) error {
+	m := NewMessage()
+	m.Method = MethodNack
+	m.ID = id
+	m.Apply(opts...)
+	return c.conn.Send(m)
+}
+
+// Connect opens the connection and establishes the session.
+func (c *Client) Connect(opts ...MessageOption) error {
+	m := NewMessage()
+	m.Method = MethodStomp
+	m.Apply(opts...)
+	if err := c.sendMessage(m); err != nil {
+		return err
+	}
+
+	m, ok := <-c.conn.Receive()
+	if !ok {
+		return io.EOF
+	}
+	defer m.Release()
+
+	if !bytes.Equal(m.Method, MethodConnected) {
+		return fmt.Errorf("stomp: invalid message: expects connected")
+	}
+	go c.listen()
+	return nil
+}
+
+// Disconnect terminates the session and closes the connection.
+func (c *Client) Disconnect() error {
+	m := NewMessage()
+	m.Method = MethodDisconnect
+	c.sendMessage(m)
+	return c.conn.Close()
+}
+
+func (c *Client) incr() int64 {
+	c.mu.Lock()
+	i := c.seq
+	c.seq++
+	c.mu.Unlock()
+	return i
+}
+
+func (c *Client) listen() error {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("stomp: unexpected recovery: %s", r)
+		}
+	}()
+
+	for {
+		m, ok := <-c.conn.Receive()
+		if !ok {
+			return io.EOF
+		}
+
+		switch {
+		case bytes.Equal(m.Method, MethodConnected):
+			// important
+		case bytes.Equal(m.Method, MethodMessage):
+			c.handleMessage(m)
+		case bytes.Equal(m.Method, MethodRecipet):
+			c.handleReceipt(m)
+		default:
+			log.Printf("stomp: unexpected message type: %s", string(m.Method))
+		}
+	}
+}
+
+func (c *Client) handleReceipt(m *Message) {
+	c.mu.Lock()
+	receiptc, ok := c.wait[string(m.Receipt)]
+	c.mu.Unlock()
+	if !ok {
+		log.Printf("stomp: cannot find pending receipt for %s", string(m.Receipt))
+		return
+	}
+	receiptc <- struct{}{}
+}
+
+func (c *Client) handleMessage(m *Message) {
+	c.mu.Lock()
+	handler, ok := c.subs[m.Subs]
+	c.mu.Unlock()
+	if !ok {
+		log.Printf("stomp: cannot find subscription handler for %d", m.Subs)
+		return
+	}
+	handler.Handle(m)
+}
+
+func (c *Client) sendMessage(m *Message) error {
+	// moved to transport
+	// defer m.Release()
+
+	if len(m.Receipt) == 0 {
+		return c.conn.Send(m)
+	}
+
+	receiptc := make(chan struct{}, 1)
+	c.wait[string(m.Receipt)] = receiptc
+
+	defer func() {
+		delete(c.wait, string(m.Receipt))
+	}()
+
+	err := c.conn.Send(m)
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-receiptc:
+		return nil
+	}
+}
