@@ -1,6 +1,13 @@
 package main
 
-import "github.com/urfave/cli"
+import (
+	"io"
+	"net"
+
+	"github.com/urfave/cli"
+
+	"github.com/drone/mq/server"
+)
 
 var comandServe = cli.Command{
 	Name:   "start",
@@ -35,5 +42,43 @@ var comandServe = cli.Command{
 }
 
 func serve(c *cli.Context) error {
-	panic("not yet implemented")
+	var (
+		errc = make(chan error)
+
+		addr1 = c.String("tcp")
+		// addr2 = c.String("http")
+		// base  = c.String("base")
+		// route = c.String("path")
+	)
+
+	server := server.NewServer()
+	// http.Handle(path.Join("/", base, route), server)
+
+	// go func() {
+	// 	errc <- http.ListenAndServe(addr2, nil)
+	// }()
+
+	go func() {
+		l, err := net.Listen("tcp", addr1)
+		if err != nil {
+			errc <- err
+			return
+		}
+		defer l.Close()
+
+		for {
+			conn, err := l.Accept()
+			if err == io.EOF {
+				errc <- nil
+				return
+			}
+			if err != nil {
+				errc <- err
+				return
+			}
+			go server.Serve(conn)
+		}
+	}()
+
+	return <-errc
 }

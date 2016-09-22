@@ -108,6 +108,10 @@ func (t *topic) disconnect(s *session) error {
 	return nil
 }
 
+func (t *topic) restore(m *stomp.Message) error {
+	return nil
+}
+
 // returns true if the topic has zero subscribers indicating
 // that it can be recycled.
 func (t *topic) recycle() (ok bool) {
