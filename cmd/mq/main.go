@@ -199,6 +199,10 @@ func subscribe(c *cli.Context) (err error) {
 	// forcing a friendly goodbye.
 	signal.Notify(quit, os.Interrupt)
 
-	<-quit
+	select {
+	case <-quit:
+	case <-client.Done():
+	}
+
 	return client.Unsubscribe(id)
 }

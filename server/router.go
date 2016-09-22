@@ -206,10 +206,9 @@ func createHandler(m *stomp.Message) handler {
 	switch {
 	case bytes.HasPrefix(m.Dest, routeTopic):
 		return newTopic(m.Dest)
-	// case bytes.HasPrefix(m.Dest, routeQueue):
-	// 	return newQueue(m.Dest)
+	case bytes.HasPrefix(m.Dest, routeQueue):
+		return newQueue(m.Dest)
 	default:
-		// return newQueue(m.Dest)
-		return newTopic(m.Dest)
+		return newQueue(m.Dest)
 	}
 }

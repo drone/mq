@@ -15,9 +15,10 @@ import (
 type Client struct {
 	mu sync.Mutex
 
-	conn Peer
+	peer Peer
 	subs map[int64]Handler
 	wait map[string]chan struct{}
+	done chan error
 
 	seq int64
 
@@ -28,11 +29,12 @@ type Client struct {
 }
 
 // New returns a new STOMP client using the given connection.
-func New(conn Peer) *Client {
+func New(peer Peer) *Client {
 	return &Client{
-		conn: conn,
+		peer: peer,
 		subs: make(map[int64]Handler),
 		wait: make(map[string]chan struct{}),
+		done: make(chan error, 1),
 	}
 }
 
@@ -120,7 +122,7 @@ func (c *Client) Nack(id int64, opts ...MessageOption) error {
 	m.Method = MethodNack
 	m.ID = id
 	m.Apply(opts...)
-	return c.conn.Send(m)
+	return c.peer.Send(m)
 }
 
 // Connect opens the connection and establishes the session.
@@ -132,7 +134,7 @@ func (c *Client) Connect(opts ...MessageOption) error {
 		return err
 	}
 
-	m, ok := <-c.conn.Receive()
+	m, ok := <-c.peer.Receive()
 	if !ok {
 		return io.EOF
 	}
@@ -150,7 +152,12 @@ func (c *Client) Disconnect() error {
 	m := NewMessage()
 	m.Method = MethodDisconnect
 	c.sendMessage(m)
-	return c.conn.Close()
+	return c.peer.Close()
+}
+
+// Done returns a channel
+func (c *Client) Done() <-chan error {
+	return c.done
 }
 
 func (c *Client) incr() int64 {
@@ -161,22 +168,22 @@ func (c *Client) incr() int64 {
 	return i
 }
 
-func (c *Client) listen() error {
+func (c *Client) listen() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("stomp: unexpected recovery: %s", r)
+			c.done <- r.(error)
 		}
 	}()
 
 	for {
-		m, ok := <-c.conn.Receive()
+		m, ok := <-c.peer.Receive()
 		if !ok {
-			return io.EOF
+			c.done <- io.EOF
+			return
 		}
 
 		switch {
-		case bytes.Equal(m.Method, MethodConnected):
-			// important
 		case bytes.Equal(m.Method, MethodMessage):
 			c.handleMessage(m)
 		case bytes.Equal(m.Method, MethodRecipet):
@@ -210,11 +217,8 @@ func (c *Client) handleMessage(m *Message) {
 }
 
 func (c *Client) sendMessage(m *Message) error {
-	// moved to transport
-	// defer m.Release()
-
 	if len(m.Receipt) == 0 {
-		return c.conn.Send(m)
+		return c.peer.Send(m)
 	}
 
 	receiptc := make(chan struct{}, 1)
@@ -224,7 +228,7 @@ func (c *Client) sendMessage(m *Message) error {
 		delete(c.wait, string(m.Receipt))
 	}()
 
-	err := c.conn.Send(m)
+	err := c.peer.Send(m)
 	if err != nil {
 		return err
 	}

@@ -19,6 +19,8 @@ type connPeer struct {
 	conn net.Conn
 	done chan bool
 
+	reader   *bufio.Reader
+	writer   *bufio.Writer
 	incoming chan *Message
 	outgoing chan *Message
 }
@@ -27,6 +29,8 @@ type connPeer struct {
 // messages using net.Conn c.
 func Conn(c net.Conn) Peer {
 	p := &connPeer{
+		reader:   bufio.NewReaderSize(c, bufferSize),
+		writer:   bufio.NewWriterSize(c, bufferSize),
 		incoming: make(chan *Message),
 		outgoing: make(chan *Message),
 		done:     make(chan bool),
@@ -58,30 +62,33 @@ func (c *connPeer) Close() error {
 	return c.close()
 }
 
-func (c *connPeer) close() (err error) {
-	err = c.conn.Close()
-	close(c.done)
-	close(c.incoming)
-	close(c.outgoing)
-	return
+func (c *connPeer) close() error {
+	select {
+	case <-c.done:
+		return io.EOF
+	default:
+		close(c.done)
+		close(c.incoming)
+		close(c.outgoing)
+		return c.drain()
+	}
 }
 
 func (c *connPeer) readInto(messages chan<- *Message) {
-	bufc := bufio.NewReaderSize(c.conn, bufferSize)
+	defer c.close()
+
 	for {
-		c.conn.SetReadDeadline(time.Now().Add(deadline))
-		buf, err := bufc.ReadBytes(0)
+		buf, err := c.reader.ReadBytes(0)
 		if err != nil {
 			break
 		}
-		c.conn.SetReadDeadline(never)
 
 		msg := NewMessage()
 		msg.Parse(buf[:len(buf)-1])
 
 		select {
 		case <-c.done:
-			return
+			break
 		default:
 			messages <- msg
 		}
@@ -89,24 +96,38 @@ func (c *connPeer) readInto(messages chan<- *Message) {
 }
 
 func (c *connPeer) writeFrom(messages <-chan *Message) {
-	defer c.Close()
-
 	tick := time.NewTicker(time.Millisecond * 100).C
-	bufc := bufio.NewWriterSize(c.conn, bufferSize)
+
+loop:
 	for {
 		select {
 		case <-c.done:
-			return
+			break loop
 		case <-tick:
 			c.conn.SetWriteDeadline(time.Now().Add(deadline))
-			if err := bufc.Flush(); err != nil {
+			if err := c.writer.Flush(); err != nil {
 				return
 			}
 			c.conn.SetWriteDeadline(never)
-		case msg := <-messages:
-			writeTo(bufc, msg)
-			bufc.WriteByte(0)
+		case msg, ok := <-messages:
+			if !ok {
+				return
+			}
+			writeTo(c.writer, msg)
+			c.writer.WriteByte(0)
 			msg.Release()
 		}
 	}
+}
+
+func (c *connPeer) drain() error {
+	c.conn.SetWriteDeadline(time.Now().Add(deadline))
+	for msg := range c.outgoing {
+		writeTo(c.writer, msg)
+		c.writer.WriteByte(0)
+		msg.Release()
+	}
+	c.conn.SetWriteDeadline(never)
+	c.writer.Flush()
+	return c.conn.Close()
 }
