@@ -22,6 +22,6 @@ _testmain.go
 *.exe
 *.test
 *.prof
-
+*.txt
 *.out
 cmd/mq/mq
