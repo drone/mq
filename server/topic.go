@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"math/rand"
 	"sync"
 
 	"github.com/drone/mq/stomp"
@@ -31,7 +30,7 @@ func newTopic(dest []byte) *topic {
 // saved for future use. If the message includes retain:remove the
 // previously retained message is set to nil.
 func (t *topic) publish(m *stomp.Message) error {
-	id := rand.Int63()
+	id := stomp.Rand()
 
 	t.RLock()
 	for sub := range t.subs {
@@ -43,6 +42,7 @@ func (t *topic) publish(m *stomp.Message) error {
 		c := m.Copy()
 		c.ID = id
 		c.Method = stomp.MethodMessage
+		c.Subs = sub.id
 		sub.session.send(c)
 	}
 	t.RUnlock()
@@ -85,7 +85,8 @@ func (t *topic) subscribe(s *subscription, m *stomp.Message) error {
 	for _, m := range hist {
 		c := m.Copy()
 		c.Method = stomp.MethodMessage
-		c.ID = rand.Int63()
+		c.Subs = s.id
+		c.ID = stomp.Rand()
 		s.session.send(c)
 	}
 

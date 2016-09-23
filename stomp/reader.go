@@ -69,15 +69,15 @@ func read(input []byte, m *Message) (err error) {
 		case bytes.Equal(name, HeaderDest):
 			m.Dest = value
 		case bytes.Equal(name, HeaderExpires):
-			m.Expires = ParseInt64(value)
+			m.Expires = value
 		case bytes.Equal(name, HeaderLogin):
 			m.User = value
 		case bytes.Equal(name, HeaderPass):
 			m.Pass = value
 		case bytes.Equal(name, HeaderID):
-			m.ID = ParseInt64(value)
+			m.ID = value
 		case bytes.Equal(name, HeaderMessageID):
-			m.ID = ParseInt64(value)
+			m.ID = value
 		case bytes.Equal(name, HeaderPersist):
 			m.Persist = value
 		case bytes.Equal(name, HeaderPrefetch):
@@ -91,7 +91,7 @@ func read(input []byte, m *Message) (err error) {
 		case bytes.Equal(name, HeaderSelector):
 			m.Selector = value
 		case bytes.Equal(name, HeaderSubscription):
-			m.Subs = ParseInt64(value)
+			m.Subs = value
 		case bytes.Equal(name, HeaderVersion):
 			m.Proto = value
 		default:

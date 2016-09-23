@@ -27,7 +27,7 @@ func newQueue(dest []byte) *queue {
 
 func (q *queue) publish(m *stomp.Message) error {
 	c := m.Copy()
-	c.ID = rand.Int63()
+	c.ID = stomp.Rand()
 	c.Method = stomp.MethodMessage
 
 	q.Lock()
@@ -90,7 +90,7 @@ func (q *queue) process() error {
 		m := e.Value.(*stomp.Message)
 
 		// if the message expires we can remove it from the list
-		if m.Expires != 0 && m.Expires < time.Now().Unix() {
+		if len(m.Expires) != 0 && stomp.ParseInt64(m.Expires) < time.Now().Unix() {
 			q.list.Remove(e)
 			continue
 		}
@@ -112,11 +112,13 @@ func (q *queue) process() error {
 				sub.pending++
 			}
 			if sub.ack {
+				m.Ack = stomp.Rand()
 				sub.session.Lock()
-				sub.session.ack[m.ID] = m.Copy()
+				sub.session.ack[string(m.Ack)] = m.Copy()
 				sub.session.Unlock()
 			}
 
+			m.Subs = sub.id
 			sub.session.send(m)
 			q.list.Remove(e)
 		}

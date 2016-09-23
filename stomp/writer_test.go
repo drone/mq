@@ -32,7 +32,7 @@ var payloads = []struct {
 		message: &Message{
 			Method:  MethodSend,
 			Dest:    []byte("/queue/test"),
-			Expires: 1234,
+			Expires: []byte("1234"),
 			Retain:  RetainAll,
 			Persist: PersistTrue,
 			Receipt: []byte("4321"),
@@ -44,7 +44,7 @@ var payloads = []struct {
 		payload: "SUBSCRIBE\nid:123\ndestination:/queue/test\nselector:foo == bar\nprefetch-count:2\nack:auto\n\n",
 		message: &Message{
 			Method:   MethodSubscribe,
-			ID:       123,
+			ID:       []byte("123"),
 			Dest:     []byte("/queue/test"),
 			Selector: []byte("foo == bar"),
 			Prefetch: []byte("2"),
@@ -56,7 +56,7 @@ var payloads = []struct {
 		payload: "UNSUBSCRIBE\nid:123\n\n",
 		message: &Message{
 			Method: MethodUnsubscribe,
-			ID:     123,
+			ID:     []byte("123"),
 			Header: newHeader(),
 		},
 	},
@@ -64,7 +64,7 @@ var payloads = []struct {
 		payload: "ACK\nid:123\n\n",
 		message: &Message{
 			Method: MethodAck,
-			ID:     123,
+			ID:     []byte("123"),
 			Header: newHeader(),
 		},
 	},
@@ -72,7 +72,7 @@ var payloads = []struct {
 		payload: "NACK\nid:123\n\n",
 		message: &Message{
 			Method: MethodNack,
-			ID:     123,
+			ID:     []byte("123"),
 			Header: newHeader(),
 		},
 	},
@@ -81,8 +81,8 @@ var payloads = []struct {
 		message: &Message{
 			Method: MethodMessage,
 			Dest:   []byte("/queue/test"),
-			ID:     123,
-			Subs:   321,
+			ID:     []byte("123"),
+			Subs:   []byte("321"),
 			Ack:    []byte("312"),
 			Body:   []byte("hello"),
 			Header: newHeader(),

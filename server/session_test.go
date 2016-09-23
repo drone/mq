@@ -1,19 +1,16 @@
 package server
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/drone/mq/stomp"
 )
 
-func init() {
-	seedSessions(10)
-}
-
 func Test_session_subscribe(t *testing.T) {
 	sess := requestSession()
 	sess.seq = 1
-	defer releaseSession(sess)
+	defer sess.release()
 
 	msg := stomp.NewMessage()
 	msg.Dest = []byte("/topic/test")
@@ -25,7 +22,7 @@ func Test_session_subscribe(t *testing.T) {
 	if sub.prefetch != 2 {
 		t.Errorf("expected subscription prefix copied from message")
 	}
-	if sub.id != 1 {
+	if !bytes.Equal(sub.id, []byte("1")) {
 		t.Errorf("expected subscription id correctly set, got %d", sub.id)
 	}
 	if sess.seq != 2 {
@@ -34,7 +31,7 @@ func Test_session_subscribe(t *testing.T) {
 	if sub.session != sess {
 		t.Errorf("expect session attached to subscription")
 	}
-	if sess.sub[1] != sub {
+	if sess.sub["1"] != sub {
 		t.Errorf("expect subscription tracked in session map")
 	}
 	if sub.selector == nil {
@@ -42,10 +39,10 @@ func Test_session_subscribe(t *testing.T) {
 	}
 
 	sess.unsub(sub)
-	if sub.id != 0 {
+	if len(sub.id) != 0 {
 		t.Errorf("expected subscription reset")
 	}
-	if sess.sub[1] != nil {
+	if sess.sub["1"] != nil {
 		t.Errorf("expect subscription removed from session")
 	}
 }
@@ -53,20 +50,16 @@ func Test_session_subscribe(t *testing.T) {
 func Test_session_reset(t *testing.T) {
 	sess := &session{
 		peer: nil,
-		id:   1,
 		seq:  1,
-		sub: map[int64]*subscription{
-			0: &subscription{},
+		sub: map[string]*subscription{
+			"0": &subscription{},
 		},
-		ack: map[int64]*stomp.Message{
-			0: &stomp.Message{},
+		ack: map[string]*stomp.Message{
+			"0": &stomp.Message{},
 		},
 	}
 	sess.reset()
 
-	if sess.id != 0 {
-		t.Errorf("expect session id reset")
-	}
 	if sess.seq != 0 {
 		t.Errorf("expect session seq reset")
 	}
@@ -96,7 +89,7 @@ func Test_session_send(t *testing.T) {
 	}
 
 	sent.Release()
-	releaseSession(s)
+	s.release()
 }
 
 func Test_session_pool(t *testing.T) {
@@ -104,5 +97,5 @@ func Test_session_pool(t *testing.T) {
 	if s == nil {
 		t.Errorf("expected session from pool")
 	}
-	releaseSession(s)
+	s.release()
 }

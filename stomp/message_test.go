@@ -7,13 +7,13 @@ import (
 
 func TestMessageCopy(t *testing.T) {
 	m := NewMessage()
-	m.ID = 1
+	m.ID = []byte("1")
 	m.Proto = []byte("1.2")
 	m.Method = MethodSend
 	m.User = []byte("username")
 	m.Pass = []byte("password")
 	m.Dest = []byte("/topic/test")
-	m.Subs = 1
+	m.Subs = []byte("1")
 	m.Ack = AckAuto
 	m.Prefetch = []byte("2")
 	m.Selector = []byte("ram >= 2")
@@ -25,7 +25,7 @@ func TestMessageCopy(t *testing.T) {
 
 	c := m.Copy()
 
-	if m.ID != c.ID {
+	if !bytes.Equal(m.ID, c.ID) {
 		t.Errorf("expect ID value is copied")
 	}
 	if !bytes.Equal(m.Proto, c.Proto) {
@@ -43,7 +43,7 @@ func TestMessageCopy(t *testing.T) {
 	if !bytes.Equal(m.Dest, c.Dest) {
 		t.Errorf("expect Dest value is copied")
 	}
-	if m.Subs != c.Subs {
+	if !bytes.Equal(m.Subs, c.Subs) {
 		t.Errorf("expect Subs value is copied")
 	}
 	if !bytes.Equal(m.Ack, c.Ack) {
@@ -84,13 +84,13 @@ func TestMessageCopy(t *testing.T) {
 
 func TestMessageRelease(t *testing.T) {
 	m := NewMessage()
-	m.ID = 1
+	m.ID = []byte("1")
 	m.Proto = []byte("1.2")
 	m.Method = MethodSend
 	m.User = []byte("username")
 	m.Pass = []byte("password")
 	m.Dest = []byte("/topic/test")
-	m.Subs = 1
+	m.Subs = []byte("1")
 	m.Ack = AckAuto
 	m.Prefetch = []byte("2")
 	m.Selector = []byte("ram >= 2")
@@ -101,7 +101,7 @@ func TestMessageRelease(t *testing.T) {
 	m.Header.Add([]byte("key"), []byte("val"))
 	m.Release()
 
-	if m.ID != 0 {
+	if len(m.ID) != 0 {
 		t.Errorf("expect ID to reset to zero value")
 	}
 	if len(m.Proto) != 0 {
@@ -119,7 +119,7 @@ func TestMessageRelease(t *testing.T) {
 	if len(m.Dest) != 0 {
 		t.Errorf("expect Dest to reset to zero value")
 	}
-	if m.Subs != 0 {
+	if len(m.Subs) != 0 {
 		t.Errorf("expect Subs to reset to zero value")
 	}
 	if len(m.Ack) != 0 {

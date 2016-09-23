@@ -3,7 +3,6 @@ package stomp
 import (
 	"bytes"
 	"io"
-	"strconv"
 )
 
 var (
@@ -50,11 +49,10 @@ func writeTo(w io.Writer, m *Message) {
 		w.Write(separator)
 		w.Write(m.Dest)
 		w.Write(newline)
-		if m.Expires != 0 {
-			exp := strconv.AppendInt(nil, m.Expires, 10)
+		if len(m.Expires) != 0 {
 			w.Write(HeaderExpires)
 			w.Write(separator)
-			w.Write(exp)
+			w.Write(m.Expires)
 			w.Write(newline)
 		}
 		if len(m.Retain) != 0 {
@@ -70,11 +68,10 @@ func writeTo(w io.Writer, m *Message) {
 			w.Write(newline)
 		}
 	case bytes.Equal(m.Method, MethodSubscribe):
-		id := strconv.AppendInt(nil, m.ID, 10)
 		// id
 		w.Write(HeaderID)
 		w.Write(separator)
-		w.Write(id)
+		w.Write(m.ID)
 		w.Write(newline)
 		// destination
 		w.Write(HeaderDest)
@@ -102,32 +99,28 @@ func writeTo(w io.Writer, m *Message) {
 			w.Write(newline)
 		}
 	case bytes.Equal(m.Method, MethodUnsubscribe):
-		id := strconv.AppendInt(nil, m.ID, 10)
 		// id
 		w.Write(HeaderID)
 		w.Write(separator)
-		w.Write(id)
+		w.Write(m.ID)
 		w.Write(newline)
 	case bytes.Equal(m.Method, MethodAck):
-		id := strconv.AppendInt(nil, m.ID, 10)
 		// id
 		w.Write(HeaderID)
 		w.Write(separator)
-		w.Write(id)
+		w.Write(m.ID)
 		w.Write(newline)
 	case bytes.Equal(m.Method, MethodNack):
-		id := strconv.AppendInt(nil, m.ID, 10)
 		// id
 		w.Write(HeaderID)
 		w.Write(separator)
-		w.Write(id)
+		w.Write(m.ID)
 		w.Write(newline)
 	case bytes.Equal(m.Method, MethodMessage):
-		id := strconv.AppendInt(nil, m.ID, 10)
 		// message-id
 		w.Write(HeaderMessageID)
 		w.Write(separator)
-		w.Write(id)
+		w.Write(m.ID)
 		w.Write(newline)
 		// destination
 		w.Write(HeaderDest)
@@ -135,10 +128,9 @@ func writeTo(w io.Writer, m *Message) {
 		w.Write(m.Dest)
 		w.Write(newline)
 		// subscription
-		id = strconv.AppendInt(nil, m.Subs, 10)
 		w.Write(HeaderSubscription)
 		w.Write(separator)
-		w.Write(id)
+		w.Write(m.Subs)
 		w.Write(newline)
 		// ack
 		if len(m.Ack) != 0 {

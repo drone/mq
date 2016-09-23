@@ -34,7 +34,7 @@ func (s *Server) Serve(conn net.Conn) {
 
 		s.router.disconnect(session)
 		session.peer.Close()
-		releaseSession(session)
+		session.release()
 	}()
 
 	if err := s.router.serve(session); err != nil {

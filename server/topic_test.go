@@ -17,7 +17,7 @@ func Test_topic_publish(t *testing.T) {
 	peer, client := stomp.Pipe()
 	sess := requestSession()
 	sess.peer = peer
-	defer releaseSession(sess)
+	defer sess.release()
 
 	s := sess.subs(m)
 	b := newTopic(m.Dest)
@@ -83,7 +83,7 @@ func Test_topic_subscribe(t *testing.T) {
 	peer, client := stomp.Pipe()
 	sess := requestSession()
 	sess.peer = peer
-	defer releaseSession(sess)
+	defer sess.release()
 
 	msg1 := stomp.NewMessage()
 	msg1.Method = stomp.MethodSend
@@ -126,7 +126,7 @@ func Test_topic_subscribe(t *testing.T) {
 
 func Test_topic_disconnect(t *testing.T) {
 	sess := requestSession()
-	defer releaseSession(sess)
+	defer sess.release()
 
 	msg := stomp.NewMessage()
 	msg.Dest = []byte("/topic/test")

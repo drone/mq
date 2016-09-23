@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -16,7 +17,7 @@ type Client struct {
 	mu sync.Mutex
 
 	peer Peer
-	subs map[int64]Handler
+	subs map[string]Handler
 	wait map[string]chan struct{}
 	done chan error
 
@@ -32,7 +33,7 @@ type Client struct {
 func New(peer Peer) *Client {
 	return &Client{
 		peer: peer,
-		subs: make(map[int64]Handler),
+		subs: make(map[string]Handler),
 		wait: make(map[string]chan struct{}),
 		done: make(chan error, 1),
 	}
@@ -71,7 +72,7 @@ func (c *Client) Send(dest string, data []byte, opts ...MessageOption) error {
 }
 
 // Subscribe subscribes to the given destination.
-func (c *Client) Subscribe(dest string, handler Handler, opts ...MessageOption) (id int64, err error) {
+func (c *Client) Subscribe(dest string, handler Handler, opts ...MessageOption) (id []byte, err error) {
 	id = c.incr()
 
 	m := NewMessage()
@@ -81,13 +82,13 @@ func (c *Client) Subscribe(dest string, handler Handler, opts ...MessageOption) 
 	m.Apply(opts...)
 
 	c.mu.Lock()
-	c.subs[id] = handler
+	c.subs[string(id)] = handler
 	c.mu.Unlock()
 
 	err = c.sendMessage(m)
 	if err != nil {
 		c.mu.Lock()
-		delete(c.subs, id)
+		delete(c.subs, string(id))
 		c.mu.Unlock()
 		return
 	}
@@ -95,9 +96,9 @@ func (c *Client) Subscribe(dest string, handler Handler, opts ...MessageOption) 
 }
 
 // Unsubscribe unsubscribes to the destination.
-func (c *Client) Unsubscribe(id int64, opts ...MessageOption) error {
+func (c *Client) Unsubscribe(id []byte, opts ...MessageOption) error {
 	c.mu.Lock()
-	delete(c.subs, id)
+	delete(c.subs, string(id))
 	c.mu.Unlock()
 
 	m := NewMessage()
@@ -108,7 +109,7 @@ func (c *Client) Unsubscribe(id int64, opts ...MessageOption) error {
 }
 
 // Ack acknowledges the messages with the given id.
-func (c *Client) Ack(id int64, opts ...MessageOption) error {
+func (c *Client) Ack(id []byte, opts ...MessageOption) error {
 	m := NewMessage()
 	m.Method = MethodAck
 	m.ID = id
@@ -117,7 +118,7 @@ func (c *Client) Ack(id int64, opts ...MessageOption) error {
 }
 
 // Nack negative-acknowledges the messages with the given id.
-func (c *Client) Nack(id int64, opts ...MessageOption) error {
+func (c *Client) Nack(id []byte, opts ...MessageOption) error {
 	m := NewMessage()
 	m.Method = MethodNack
 	m.ID = id
@@ -160,12 +161,12 @@ func (c *Client) Done() <-chan error {
 	return c.done
 }
 
-func (c *Client) incr() int64 {
+func (c *Client) incr() []byte {
 	c.mu.Lock()
 	i := c.seq
 	c.seq++
 	c.mu.Unlock()
-	return i
+	return strconv.AppendInt(nil, i, 10)
 }
 
 func (c *Client) listen() {
@@ -207,7 +208,7 @@ func (c *Client) handleReceipt(m *Message) {
 
 func (c *Client) handleMessage(m *Message) {
 	c.mu.Lock()
-	handler, ok := c.subs[m.Subs]
+	handler, ok := c.subs[string(m.Subs)]
 	c.mu.Unlock()
 	if !ok {
 		log.Printf("stomp: cannot find subscription handler for %d", m.Subs)

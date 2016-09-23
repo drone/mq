@@ -26,7 +26,7 @@ func TestOptions(t *testing.T) {
 	opt = WithExpires(1234)
 	msg = NewMessage()
 	msg.Apply(opt)
-	if msg.Expires != 1234 {
+	if !bytes.Equal(msg.Expires, []byte("1234")) {
 		t.Errorf("Want WithExpires to apply expires header")
 	}
 

@@ -29,7 +29,7 @@ func WithHeader(key, value string) MessageOption {
 // WithExpires returns a MessageOption configured with an expiration.
 func WithExpires(exp int64) MessageOption {
 	return func(m *Message) {
-		m.Expires = exp
+		m.Expires = strconv.AppendInt(nil, exp, 10)
 	}
 }
 

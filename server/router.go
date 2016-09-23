@@ -83,7 +83,7 @@ func (r *router) subscribe(sess *session, m *stomp.Message) (err error) {
 
 // unsubscribe from the brokered destination.
 func (r *router) unsubscribe(sess *session, m *stomp.Message) (err error) {
-	sub, ok := sess.sub[m.ID]
+	sub, ok := sess.sub[string(m.ID)]
 	if ok {
 		return errNoSubscription
 	}
@@ -102,7 +102,7 @@ func (r *router) unsubscribe(sess *session, m *stomp.Message) (err error) {
 
 func (r *router) ack(sess *session, m *stomp.Message) {
 	sess.Lock()
-	delete(sess.ack, m.ID)
+	delete(sess.ack, string(m.ID))
 	sess.Unlock()
 
 	// if r.storage != nil {
@@ -112,8 +112,8 @@ func (r *router) ack(sess *session, m *stomp.Message) {
 
 func (r *router) nack(sess *session, m *stomp.Message) {
 	sess.Lock()
-	mm, ok := sess.ack[m.ID]
-	delete(sess.ack, m.ID)
+	mm, ok := sess.ack[string(m.ID)]
+	delete(sess.ack, string(m.ID))
 	sess.Unlock()
 
 	if ok {

@@ -4,13 +4,9 @@ import (
 	"testing"
 )
 
-func init() {
-	seedSubscriptions(10)
-}
-
 func Test_subscription_reset(t *testing.T) {
 	sub := &subscription{
-		id:       1,
+		id:       []byte("1"),
 		dest:     []byte("/topic/test"),
 		ack:      true,
 		prefetch: 1,
@@ -19,7 +15,7 @@ func Test_subscription_reset(t *testing.T) {
 	}
 	sub.reset()
 
-	if sub.id != 0 {
+	if len(sub.id) != 0 {
 		t.Errorf("expect subscription id reset")
 	}
 	if len(sub.dest) != 0 {
@@ -44,5 +40,5 @@ func Test_subscription_pool(t *testing.T) {
 	if s == nil {
 		t.Errorf("expected subscription from pool")
 	}
-	releaseSubscription(s)
+	s.release()
 }
