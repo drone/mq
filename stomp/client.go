@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/drone/mq/stomp/dialer"
 )
 
 // Client defines a client connection to a STOMP server.
@@ -41,24 +41,11 @@ func New(peer Peer) *Client {
 
 // Dial creates a client connection to the given target.
 func Dial(target string) (*Client, error) {
-	u, err := url.Parse(target)
+	conn, err := dialer.Dial(target)
 	if err != nil {
 		return nil, err
 	}
-
-	var peer Peer
-	switch u.Scheme {
-	case "tcp":
-		conn, err := net.Dial("tcp", u.Host)
-		if err != nil {
-			return nil, err
-		}
-		peer = Conn(conn)
-	default:
-		panic("invalid or unsupported STOMP scheme")
-	}
-
-	return New(peer), nil
+	return New(Conn(conn)), nil
 }
 
 // Send sends the data to the given destination.

@@ -3,6 +3,8 @@ package main
 import (
 	"io"
 	"net"
+	"net/http"
+	"path"
 
 	"github.com/urfave/cli"
 
@@ -46,17 +48,17 @@ func serve(c *cli.Context) error {
 		errc = make(chan error)
 
 		addr1 = c.String("tcp")
-		// addr2 = c.String("http")
-		// base  = c.String("base")
-		// route = c.String("path")
+		addr2 = c.String("http")
+		base  = c.String("base")
+		route = c.String("path")
 	)
 
 	server := server.NewServer()
-	// http.Handle(path.Join("/", base, route), server)
+	http.Handle(path.Join("/", base, route), server)
 
-	// go func() {
-	// 	errc <- http.ListenAndServe(addr2, nil)
-	// }()
+	go func() {
+		errc <- http.ListenAndServe(addr2, nil)
+	}()
 
 	go func() {
 		l, err := net.Listen("tcp", addr1)

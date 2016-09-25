@@ -3,8 +3,11 @@ package server
 import (
 	"log"
 	"net"
+	"net/http"
 
 	"github.com/drone/mq/stomp"
+
+	"golang.org/x/net/websocket"
 )
 
 // Server ...
@@ -40,4 +43,13 @@ func (s *Server) Serve(conn net.Conn) {
 	if err := s.router.serve(session); err != nil {
 		log.Printf("stomp: server error. %s", err)
 	}
+}
+
+// ServeHTTP accepts incoming http.Request, upgrades to a websocket and
+// begins sending and receiving STOMP messages.
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("stomp: handle websocket request.")
+	websocket.Handler(func(conn *websocket.Conn) {
+		s.Serve(conn)
+	}).ServeHTTP(w, r)
 }
