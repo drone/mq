@@ -116,6 +116,7 @@ func (c *Client) Nack(id []byte, opts ...MessageOption) error {
 // Connect opens the connection and establishes the session.
 func (c *Client) Connect(opts ...MessageOption) error {
 	m := NewMessage()
+	m.Proto = STOMP
 	m.Method = MethodStomp
 	m.Apply(opts...)
 	if err := c.sendMessage(m); err != nil {

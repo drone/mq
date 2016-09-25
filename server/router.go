@@ -12,7 +12,6 @@ var (
 	errStompMethod    = errors.New("stomp: expected stomp method")
 	errNoSubscription = errors.New("stomp: no such subscription")
 	errNoDestination  = errors.New("stomp: no such destination")
-	errNotAuthorized  = errors.New("stomp: not authorized")
 )
 
 var (
@@ -32,6 +31,7 @@ type handler interface {
 
 type router struct {
 	sync.RWMutex
+	authorizer   Authorizer
 	destinations map[string]handler
 }
 
@@ -157,11 +157,11 @@ func (r *router) serve(session *session) error {
 		return errStompMethod
 	}
 
-	if len(message.User) != 0 && len(message.Pass) != 0 {
-		// TODO verify the username and password
-		// if !bytes.Equal(message.User, user) || !bytes.Equal(message.Pass, pass) {
-		// 	return errNotAuthorized
-		// }
+	if r.authorizer != nil {
+		err := r.authorizer(message)
+		if err != nil {
+			return err
+		}
 	}
 
 	// send CONNECTED message indicating the client connection

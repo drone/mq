@@ -16,10 +16,14 @@ type Server struct {
 }
 
 // NewServer returns a new STOMP server.
-func NewServer() *Server {
-	return &Server{
+func NewServer(options ...Option) *Server {
+	server := &Server{
 		router: newRouter(),
 	}
+	for _, option := range options {
+		option(server)
+	}
+	return server
 }
 
 // Serve accepts incoming net.Conn requests.

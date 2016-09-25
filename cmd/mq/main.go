@@ -24,7 +24,7 @@ func main() {
 			EnvVar: "STOMP_SERVER",
 		},
 		cli.StringFlag{
-			Name:   "usernane, u",
+			Name:   "username, u",
 			Usage:  "stomp server username",
 			EnvVar: "STOMP_USERNAME",
 		},
@@ -117,7 +117,20 @@ func createClient(c *cli.Context) (*stomp.Client, error) {
 		return nil, err
 	}
 
-	if err := cli.Connect(); err != nil {
+	var (
+		opts []stomp.MessageOption
+
+		username = c.GlobalString("username")
+		password = c.GlobalString("password")
+	)
+
+	if username != "" || password != "" {
+		opts = append(opts,
+			stomp.WithCredentials(username, password),
+		)
+	}
+
+	if err := cli.Connect(opts...); err != nil {
 		return nil, err
 	}
 	return cli, nil

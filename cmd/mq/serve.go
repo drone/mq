@@ -47,13 +47,22 @@ func serve(c *cli.Context) error {
 	var (
 		errc = make(chan error)
 
+		user  = c.GlobalString("username")
+		pass  = c.GlobalString("password")
 		addr1 = c.String("tcp")
 		addr2 = c.String("http")
 		base  = c.String("base")
 		route = c.String("path")
 	)
 
-	server := server.NewServer()
+	var opts []server.Option
+	if user != "" || pass != "" {
+		opts = append(opts,
+			server.WithCredentials(user, pass),
+		)
+	}
+
+	server := server.NewServer(opts...)
 	http.Handle(path.Join("/", base, route), server)
 
 	go func() {
