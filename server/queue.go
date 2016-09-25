@@ -29,7 +29,6 @@ func (q *queue) publish(m *stomp.Message) error {
 	c := m.Copy()
 	c.ID = stomp.Rand()
 	c.Method = stomp.MethodMessage
-
 	q.Lock()
 	q.list.PushBack(c)
 	q.Unlock()
@@ -121,6 +120,7 @@ func (q *queue) process() error {
 			m.Subs = sub.id
 			sub.session.send(m)
 			q.list.Remove(e)
+			return nil
 		}
 	}
 	return nil

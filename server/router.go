@@ -103,7 +103,15 @@ func (r *router) unsubscribe(sess *session, m *stomp.Message) (err error) {
 
 func (r *router) ack(sess *session, m *stomp.Message) {
 	sess.Lock()
+	ack, ok := sess.ack[string(m.ID)]
 	delete(sess.ack, string(m.ID))
+
+	// if the subscription is still active, check the prefetch
+	// count and decrement pending prefetches.
+	sub, ok := sess.sub[string(ack.Dest)]
+	if ok && sub.prefetch != 0 && sub.pending > 0 {
+		sub.prefetch--
+	}
 	sess.Unlock()
 
 	// if r.storage != nil {
@@ -113,19 +121,23 @@ func (r *router) ack(sess *session, m *stomp.Message) {
 
 func (r *router) nack(sess *session, m *stomp.Message) {
 	sess.Lock()
-	mm, ok := sess.ack[string(m.ID)]
+	nack, ok := sess.ack[string(m.ID)]
 	delete(sess.ack, string(m.ID))
+
+	// if the subscription is still active, check the prefetch
+	// count and decrement pending prefetches.
+	sub, subscribed := sess.sub[string(nack.Dest)]
+	if subscribed && sub.prefetch != 0 && sub.pending > 0 {
+		sub.prefetch--
+	}
 	sess.Unlock()
 
 	if ok {
-		r.publish(mm)
+		r.publish(nack)
 	}
 }
 
 func (r *router) disconnect(sess *session) {
-	for _, msg := range sess.ack {
-		r.publish(msg)
-	}
 	for _, sub := range sess.sub {
 		r.Lock()
 		h, ok := r.destinations[string(sub.dest)]
@@ -135,6 +147,14 @@ func (r *router) disconnect(sess *session) {
 		}
 		h.disconnect(sess)
 		r.collect(h)
+	}
+
+	for _, m := range sess.ack {
+		delete(sess.ack, string(m.Ack))
+
+		m.ID = m.Ack
+		m.Ack = m.Ack[:0]
+		r.publish(m)
 	}
 }
 
