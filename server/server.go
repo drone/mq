@@ -57,3 +57,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.Serve(conn)
 	}).ServeHTTP(w, r)
 }
+
+// Client returns a stomp.Client that has a direct peer connection
+// to the server.
+func (s *Server) Client() *stomp.Client {
+	a, b := stomp.Pipe()
+
+	go func() {
+		session := requestSession()
+		session.peer = b
+		if err := s.router.serve(session); err != nil {
+			log.Printf("stomp: server error. %s", err)
+		}
+	}()
+	return stomp.New(a)
+}

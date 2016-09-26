@@ -2,6 +2,7 @@ package stomp
 
 import (
 	"bytes"
+	"encoding/json"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -99,6 +100,12 @@ func (m *Message) Reset() {
 	m.Expires = m.Expires[:0]
 	m.Body = m.Body[:0]
 	m.Header.reset()
+}
+
+// Unmarshal parses the JSON-encoded body of the message and
+// stores the result in the value pointed to by v.
+func (m *Message) Unmarshal(v interface{}) error {
+	return json.Unmarshal(m.Body, v)
 }
 
 // NewMessage returns an empty message from the message pool.

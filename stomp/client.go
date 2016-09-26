@@ -2,6 +2,7 @@ package stomp
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -56,6 +57,18 @@ func (c *Client) Send(dest string, data []byte, opts ...MessageOption) error {
 	m.Body = data
 	m.Apply(opts...)
 	return c.sendMessage(m)
+}
+
+// SendJSON sends the JSON encoding of v to the given destination.
+func (c *Client) SendJSON(dest string, v interface{}, opts ...MessageOption) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	opts = append(opts,
+		WithHeader("content-type", "application/json"),
+	)
+	return c.Send(dest, data, opts...)
 }
 
 // Subscribe subscribes to the given destination.

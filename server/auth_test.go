@@ -39,6 +39,6 @@ func TestBasicAuth(t *testing.T) {
 	m.User = []byte("janedoe")
 	m.Pass = []byte("password")
 	if err := f(m); err != nil {
-		t.Errorf("Expect successful authentication, got error %s", err)
+		t.Errorf("Expect successful authorization, got error %s", err)
 	}
 }
