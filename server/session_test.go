@@ -9,11 +9,11 @@ import (
 
 func Test_session_subscribe(t *testing.T) {
 	sess := requestSession()
-	sess.seq = 1
 	defer sess.release()
 
 	msg := stomp.NewMessage()
 	msg.Dest = []byte("/topic/test")
+	msg.ID = []byte("123")
 	msg.Prefetch = []byte("2")
 	msg.Selector = []byte("ram > 2")
 	defer msg.Release()
@@ -22,16 +22,13 @@ func Test_session_subscribe(t *testing.T) {
 	if sub.prefetch != 2 {
 		t.Errorf("expected subscription prefix copied from message")
 	}
-	if !bytes.Equal(sub.id, []byte("1")) {
+	if !bytes.Equal(sub.id, []byte("123")) {
 		t.Errorf("expected subscription id correctly set, got %d", sub.id)
-	}
-	if sess.seq != 2 {
-		t.Errorf("expected session seq correctly incremented")
 	}
 	if sub.session != sess {
 		t.Errorf("expect session attached to subscription")
 	}
-	if sess.sub["1"] != sub {
+	if sess.sub["123"] != sub {
 		t.Errorf("expect subscription tracked in session map")
 	}
 	if sub.selector == nil {
@@ -50,7 +47,6 @@ func Test_session_subscribe(t *testing.T) {
 func Test_session_reset(t *testing.T) {
 	sess := &session{
 		peer: nil,
-		seq:  1,
 		sub: map[string]*subscription{
 			"0": &subscription{},
 		},
@@ -60,9 +56,6 @@ func Test_session_reset(t *testing.T) {
 	}
 	sess.reset()
 
-	if sess.seq != 0 {
-		t.Errorf("expect session seq reset")
-	}
 	if sess.peer != nil {
 		t.Errorf("expect session transport reset")
 	}

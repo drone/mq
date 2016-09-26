@@ -50,17 +50,19 @@ func (t *topic) publish(m *stomp.Message) error {
 	// if a message has the retain header set we should either
 	// retain the message, or remove the existing retained message.
 	if len(m.Retain) != 0 {
+		c := m.Copy()
+
 		t.Lock()
 		switch {
 		case bytes.Equal(m.Retain, stomp.RetainLast):
 			if len(t.hist) == 1 {
-				t.hist[0] = m
+				t.hist[0] = c
 			} else {
 				t.hist = t.hist[:0]
-				t.hist = append(t.hist, m)
+				t.hist = append(t.hist, c)
 			}
 		case bytes.Equal(m.Retain, stomp.RetainAll):
-			t.hist = append(t.hist, m)
+			t.hist = append(t.hist, c)
 		case bytes.Equal(m.Retain, stomp.RetainRemove):
 			t.hist = t.hist[:0]
 		}

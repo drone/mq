@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"strconv"
 	"sync"
 
 	"github.com/drone/mq/stomp"
@@ -13,8 +12,6 @@ import (
 type session struct {
 	peer stomp.Peer
 
-	// id  int64
-	seq int64
 	sub map[string]*subscription
 	ack map[string]*stomp.Message
 
@@ -30,7 +27,7 @@ func (s *session) send(m *stomp.Message) {
 // subscription settings from the given message.
 func (s *session) subs(m *stomp.Message) *subscription {
 	sub := requestSubscription()
-	sub.id = strconv.AppendInt(nil, s.seq, 10)
+	sub.id = m.ID
 	sub.dest = m.Dest
 	sub.ack = bytes.Equal(m.Ack, stomp.AckClient) || len(m.Prefetch) != 0
 	sub.prefetch = stomp.ParseInt(m.Prefetch)
@@ -43,7 +40,6 @@ func (s *session) subs(m *stomp.Message) *subscription {
 	}
 
 	s.sub[string(sub.id)] = sub
-	s.seq++
 	return sub
 }
 
@@ -57,7 +53,6 @@ func (s *session) unsub(sub *subscription) {
 // reset the session properties to zero values.
 func (s *session) reset() {
 	s.peer = nil
-	s.seq = 0
 	for id := range s.sub {
 		delete(s.sub, id)
 	}
