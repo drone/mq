@@ -56,4 +56,13 @@ func TestHeader(t *testing.T) {
 			t.Errorf("Want header.items[%d].value reset to the zero value", i)
 		}
 	}
+
+	header.Add([]byte("want-true"), []byte("true"))
+	header.Add([]byte("want-false"), []byte("false"))
+	if got := header.GetBool("want-true"); !got {
+		t.Errorf("Expect header.GetBool parses the boolean value true")
+	}
+	if got := header.GetBool("want-false"); got {
+		t.Errorf("Expect header.GetBool parses the boolean value false")
+	}
 }

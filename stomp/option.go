@@ -26,6 +26,18 @@ func WithHeader(key, value string) MessageOption {
 	}
 }
 
+// WithHeaders returns a MessageOption which sets headers.
+func WithHeaders(headers map[string]string) MessageOption {
+	return func(m *Message) {
+		for key, value := range headers {
+			m.Header.Add(
+				[]byte(key),
+				[]byte(value),
+			)
+		}
+	}
+}
+
 // WithExpires returns a MessageOption configured with an expiration.
 func WithExpires(exp int64) MessageOption {
 	return func(m *Message) {

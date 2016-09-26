@@ -37,6 +37,13 @@ func TestOptions(t *testing.T) {
 		t.Errorf("Want WithHeader to add header keypair")
 	}
 
+	opt = WithHeaders(map[string]string{"baz": "boo"})
+	msg = NewMessage()
+	msg.Apply(opt)
+	if v := msg.Header.Get([]byte("baz")); string(v) != "boo" {
+		t.Errorf("Want WithHeaders to add header keypairs")
+	}
+
 	opt = WithPersistence()
 	msg = NewMessage()
 	msg.Apply(opt)
