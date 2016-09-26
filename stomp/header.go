@@ -1,6 +1,9 @@
 package stomp
 
-import "bytes"
+import (
+	"bytes"
+	"strconv"
+)
 
 const defaultHeaderLen = 5
 
@@ -29,6 +32,20 @@ func (h *Header) Get(name []byte) (b []byte) {
 		}
 	}
 	return
+}
+
+// GetString returns the named header value.
+func (h *Header) GetString(name string) string {
+	k := []byte(name)
+	v := h.Get(k)
+	return string(v)
+}
+
+// GetBool returns the named header value.
+func (h *Header) GetBool(name string) bool {
+	s := h.GetString(name)
+	b, _ := strconv.ParseBool(s)
+	return b
 }
 
 // Field returns the named header value in string format. This is used to
