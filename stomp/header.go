@@ -48,6 +48,20 @@ func (h *Header) GetBool(name string) bool {
 	return b
 }
 
+// GetInt returns the named header value.
+func (h *Header) GetInt(name string) int {
+	s := h.GetString(name)
+	i, _ := strconv.Atoi(s)
+	return i
+}
+
+// GetInt64 returns the named header value.
+func (h *Header) GetInt64(name string) int64 {
+	s := h.GetString(name)
+	i, _ := strconv.ParseInt(s, 10, 64)
+	return i
+}
+
 // Field returns the named header value in string format. This is used to
 // provide compatibility with the SQL expression evaluation package.
 func (h *Header) Field(name []byte) []byte {

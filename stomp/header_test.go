@@ -57,12 +57,20 @@ func TestHeader(t *testing.T) {
 		}
 	}
 
-	header.Add([]byte("want-true"), []byte("true"))
-	header.Add([]byte("want-false"), []byte("false"))
-	if got := header.GetBool("want-true"); !got {
+	header.Add([]byte("test-true"), []byte("true"))
+	header.Add([]byte("test-false"), []byte("false"))
+	if got := header.GetBool("test-true"); !got {
 		t.Errorf("Expect header.GetBool parses the boolean value true")
 	}
-	if got := header.GetBool("want-false"); got {
+	if got := header.GetBool("test-false"); got {
+		t.Errorf("Expect header.GetBool parses the boolean value false")
+	}
+
+	header.Add([]byte("test-int"), []byte("123"))
+	if got := header.GetInt64("test-int"); got != 123 {
+		t.Errorf("Expect header.GetBool parses the boolean value true")
+	}
+	if got := header.GetInt("test-int"); got != 123 {
 		t.Errorf("Expect header.GetBool parses the boolean value false")
 	}
 }
