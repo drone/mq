@@ -33,11 +33,13 @@ type router struct {
 	sync.RWMutex
 	authorizer   Authorizer
 	destinations map[string]handler
+	sessions     map[*session]struct{}
 }
 
 func newRouter() *router {
 	return &router{
 		destinations: make(map[string]handler),
+		sessions:     make(map[*session]struct{}),
 	}
 }
 
@@ -160,6 +162,10 @@ func (r *router) disconnect(sess *session) {
 		m.Ack = m.Ack[:0]
 		r.publish(m)
 	}
+
+	r.Lock()
+	delete(r.sessions, sess)
+	r.Unlock()
 }
 
 func (r *router) collect(h handler) {
@@ -187,6 +193,10 @@ func (r *router) serve(session *session) error {
 			return err
 		}
 	}
+
+	r.Lock()
+	r.sessions[session] = struct{}{}
+	r.Unlock()
 
 	// send CONNECTED message indicating the client connection
 	// was accepted by the server.

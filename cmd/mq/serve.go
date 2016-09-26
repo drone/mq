@@ -63,6 +63,8 @@ func serve(c *cli.Context) error {
 	}
 
 	server := server.NewServer(opts...)
+	http.HandleFunc(path.Join("/", base, "meta/sessions"), server.HandleSessions)
+	http.HandleFunc(path.Join("/", base, "meta/destinations"), server.HandleDests)
 	http.Handle(path.Join("/", base, route), server)
 
 	go func() {

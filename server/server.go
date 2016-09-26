@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
@@ -56,6 +57,43 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	websocket.Handler(func(conn *websocket.Conn) {
 		s.Serve(conn)
 	}).ServeHTTP(w, r)
+}
+
+// HandleSessions writes a JSON-encoded list of sessions to the http.Request.
+func (s *Server) HandleSessions(w http.ResponseWriter, r *http.Request) {
+	type sessionResp struct {
+		Addr string `json:"address"`
+	}
+
+	var sessions []sessionResp
+	s.router.RLock()
+	for sess := range s.router.sessions {
+		sessions = append(sessions, sessionResp{
+			Addr: sess.peer.Addr(),
+		})
+	}
+	s.router.RUnlock()
+
+	json.NewEncoder(w).Encode(sessions)
+}
+
+// HandleDests writes a JSON-encoded list of destinations to the http.Request.
+func (s *Server) HandleDests(w http.ResponseWriter, r *http.Request) {
+	type destionatResp struct {
+		Dest string `json:"destination"`
+	}
+
+	var dests []destionatResp
+	s.router.RLock()
+	for dest := range s.router.destinations {
+		d := destionatResp{
+			Dest: dest,
+		}
+		dests = append(dests, d)
+	}
+	s.router.RUnlock()
+
+	json.NewEncoder(w).Encode(dests)
 }
 
 // Client returns a stomp.Client that has a direct peer connection

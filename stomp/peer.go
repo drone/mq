@@ -1,6 +1,10 @@
 package stomp
 
-import "io"
+import (
+	"io"
+	"net"
+	"sync"
+)
 
 // Peer defines a peer-to-peer connection.
 type Peer interface {
@@ -12,6 +16,9 @@ type Peer interface {
 
 	// Close closes the connection.
 	Close() error
+
+	// Addr returns the peer address.
+	Addr() string
 }
 
 // Pipe creates a synchronous in-memory pipe, where reads on one end are
@@ -60,3 +67,20 @@ func (p *localPeer) Close() error {
 	close(p.outgoing)
 	return nil
 }
+
+func (p *localPeer) Addr() string {
+	peerAddrOnce.Do(func() {
+		// get the local address list
+		addr, _ := net.InterfaceAddrs()
+		if len(addr) != 0 {
+			// use the last address in the list
+			peerAddr = addr[len(addr)-1].String()
+		}
+	})
+	return peerAddr
+}
+
+var peerAddrOnce sync.Once
+
+// default address displayed for local pipes
+var peerAddr = "127.0.0.1/8"

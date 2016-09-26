@@ -56,8 +56,10 @@ func (c *connPeer) Send(message *Message) error {
 	}
 }
 
-// TODO we should gracefully shut down, blocking
-// until all pending messages are dispatched.
+func (c *connPeer) Addr() string {
+	return c.conn.RemoteAddr().String()
+}
+
 func (c *connPeer) Close() error {
 	return c.close()
 }
