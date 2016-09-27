@@ -2,10 +2,10 @@ package server
 
 import (
 	"encoding/json"
-	"log"
 	"net"
 	"net/http"
 
+	"github.com/drone/mq/logger"
 	"github.com/drone/mq/stomp"
 
 	"golang.org/x/net/websocket"
@@ -29,16 +29,16 @@ func NewServer(options ...Option) *Server {
 
 // Serve accepts incoming net.Conn requests.
 func (s *Server) Serve(conn net.Conn) {
-	log.Printf("stomp: successfully opened socket connection.")
+	logger.Debugf("stomp: successfully opened socket connection.")
 
 	session := requestSession()
 	session.peer = stomp.Conn(conn)
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("stomp: unexpected panic: %s", r)
+			logger.Warningf("stomp: unexpected panic: %s", r)
 		}
-		log.Printf("stomp: successfully closed socket connection.")
+		logger.Debugf("stomp: successfully closed socket connection.")
 
 		s.router.disconnect(session)
 		session.peer.Close()
@@ -46,14 +46,14 @@ func (s *Server) Serve(conn net.Conn) {
 	}()
 
 	if err := s.router.serve(session); err != nil {
-		log.Printf("stomp: server error. %s", err)
+		logger.Warningf("stomp: server error. %s", err)
 	}
 }
 
 // ServeHTTP accepts incoming http.Request, upgrades to a websocket and
 // begins sending and receiving STOMP messages.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("stomp: handle websocket request.")
+	logger.Debugf("stomp: handle websocket request.")
 	websocket.Handler(func(conn *websocket.Conn) {
 		s.Serve(conn)
 	}).ServeHTTP(w, r)
@@ -114,7 +114,7 @@ func (s *Server) Client() *stomp.Client {
 		session := requestSession()
 		session.peer = b
 		if err := s.router.serve(session); err != nil {
-			log.Printf("stomp: server error. %s", err)
+			logger.Warningf("stomp: server error. %s", err)
 		}
 	}()
 	return stomp.New(a)

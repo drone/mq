@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/drone/mq/logger"
 	"github.com/drone/mq/stomp"
 	"github.com/drone/mq/stomp/selector"
 )
@@ -25,6 +26,7 @@ func (s *session) init(m *stomp.Message) {
 
 // send writes the message to the transport.
 func (s *session) send(m *stomp.Message) {
+	logger.Debugf("stomp: sending message to client.\n%s", m)
 	s.peer.Send(m)
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/drone/mq/logger"
 	"github.com/drone/mq/stomp"
 )
 
@@ -187,6 +188,9 @@ func (r *router) serve(session *session) error {
 		return errStompMethod
 	}
 
+	// optional message logging
+	logger.Debugf("stomp: received message from client.\n%s", message)
+
 	if r.authorizer != nil {
 		err := r.authorizer(message)
 		if err != nil {
@@ -203,6 +207,7 @@ func (r *router) serve(session *session) error {
 	// was accepted by the server.
 	connected := stomp.NewMessage()
 	connected.Method = stomp.MethodConnected
+	connected.Proto = stomp.STOMP
 	session.send(connected)
 
 	for {
@@ -210,6 +215,9 @@ func (r *router) serve(session *session) error {
 		if !ok {
 			return nil
 		}
+
+		// optional message logging
+		logger.Debugf("stomp: received message from client.\n%s", message)
 
 		switch {
 		case bytes.Equal(message.Method, stomp.MethodSend):

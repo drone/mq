@@ -25,3 +25,5 @@ _testmain.go
 *.txt
 *.out
 cmd/mq/mq
+
+stomp/cron/*.go

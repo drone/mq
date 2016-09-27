@@ -93,10 +93,22 @@
 			"revisionTime": "2016-08-25T02:45:22Z"
 		},
 		{
+			"checksumSHA1": "VNT+C9PEMQL7LA5b3gBItzBCvec=",
+			"path": "github.com/tidwall/redlog",
+			"revision": "54086c8553cd23aba652513a87d2b085ea961541",
+			"revisionTime": "2016-09-22T20:10:49Z"
+		},
+		{
 			"checksumSHA1": "0Il1DbcyN359or+I4zLd6lwFirk=",
 			"path": "github.com/urfave/cli",
 			"revision": "11c134509d89c2018675f369955218a180dc7428",
 			"revisionTime": "2016-07-16T16:11:36Z"
+		},
+		{
+			"checksumSHA1": "y3a1tOZVwKCqG2yJZvAYycnelyM=",
+			"path": "golang.org/x/crypto/ssh/terminal",
+			"revision": "8e06e8ddd9629eb88639aba897641bff8031f1d3",
+			"revisionTime": "2016-09-10T18:59:01Z"
 		},
 		{
 			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",

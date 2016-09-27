@@ -4,10 +4,13 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"path"
 
+	"github.com/tidwall/redlog"
 	"github.com/urfave/cli"
 
+	"github.com/drone/mq/logger"
 	"github.com/drone/mq/server"
 )
 
@@ -34,11 +37,11 @@ var comandServe = cli.Command{
 			Value:  "/",
 			EnvVar: "STOMP_BASE",
 		},
-		cli.StringFlag{
-			Name:   "path, p",
-			Usage:  "stomp server path",
-			Value:  "/ws",
-			EnvVar: "STOMP_PATH",
+		cli.IntFlag{
+			Name:   "level",
+			Usage:  "logging level",
+			Value:  2,
+			EnvVar: "STOMP_LOG_LEVEL",
 		},
 	},
 }
@@ -61,6 +64,13 @@ func serve(c *cli.Context) error {
 			server.WithCredentials(user, pass),
 		)
 	}
+
+	logs := redlog.New(os.Stderr)
+	logs.SetLevel(
+		c.Int("level"),
+	)
+	logger.SetLogger(logs)
+	logger.Warningf("stomp: starting server")
 
 	server := server.NewServer(opts...)
 	http.HandleFunc(path.Join("/", base, "meta/sessions"), server.HandleSessions)
