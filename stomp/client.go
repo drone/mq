@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/drone/mq/logger"
 	"github.com/drone/mq/stomp/dialer"
 )
 
@@ -105,6 +105,7 @@ func (c *Client) Unsubscribe(id []byte, opts ...MessageOption) error {
 	m.Method = MethodUnsubscribe
 	m.ID = id
 	m.Apply(opts...)
+
 	return c.sendMessage(m)
 }
 
@@ -114,6 +115,7 @@ func (c *Client) Ack(id []byte, opts ...MessageOption) error {
 	m.Method = MethodAck
 	m.ID = id
 	m.Apply(opts...)
+
 	return c.sendMessage(m)
 }
 
@@ -123,6 +125,7 @@ func (c *Client) Nack(id []byte, opts ...MessageOption) error {
 	m.Method = MethodNack
 	m.ID = id
 	m.Apply(opts...)
+
 	return c.peer.Send(m)
 }
 
@@ -143,7 +146,7 @@ func (c *Client) Connect(opts ...MessageOption) error {
 	defer m.Release()
 
 	if !bytes.Equal(m.Method, MethodConnected) {
-		return fmt.Errorf("stomp: invalid message: expect connected")
+		return fmt.Errorf("stomp: inbound message: unexpected method, want connected")
 	}
 	go c.listen()
 	return nil
@@ -173,7 +176,7 @@ func (c *Client) incr() []byte {
 func (c *Client) listen() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("stomp: unexpected recovery: %s", r)
+			logger.Warningf("stomp client: recover panic: %s", r)
 			c.done <- r.(error)
 		}
 	}()
@@ -191,7 +194,9 @@ func (c *Client) listen() {
 		case bytes.Equal(m.Method, MethodRecipet):
 			c.handleReceipt(m)
 		default:
-			log.Printf("stomp: unexpected message type: %s", string(m.Method))
+			logger.Noticef("stomp client: unknown message type: %s",
+				string(m.Method),
+			)
 		}
 	}
 }
@@ -201,7 +206,9 @@ func (c *Client) handleReceipt(m *Message) {
 	receiptc, ok := c.wait[string(m.Receipt)]
 	c.mu.Unlock()
 	if !ok {
-		log.Printf("stomp: cannot find pending receipt for %s", string(m.Receipt))
+		logger.Noticef("stomp client: unknown read receipt: %s",
+			string(m.Receipt),
+		)
 		return
 	}
 	receiptc <- struct{}{}
@@ -212,7 +219,9 @@ func (c *Client) handleMessage(m *Message) {
 	handler, ok := c.subs[string(m.Subs)]
 	c.mu.Unlock()
 	if !ok {
-		log.Printf("stomp: cannot find subscription handler for %d", m.Subs)
+		logger.Noticef("stomp client: subscription not found: %s",
+			string(m.Subs),
+		)
 		return
 	}
 	handler.Handle(m)

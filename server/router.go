@@ -88,17 +88,29 @@ func (r *router) subscribe(sess *session, m *stomp.Message) (err error) {
 // unsubscribe from the brokered destination.
 func (r *router) unsubscribe(sess *session, m *stomp.Message) (err error) {
 	sub, ok := sess.sub[string(m.ID)]
-	if ok {
+	if !ok {
+		logger.Noticef("stomp: unsubscribe %s: subscription not found",
+			string(m.ID),
+		)
 		return errNoSubscription
 	}
 	defer sess.unsub(sub)
 
 	r.Lock()
-	h, ok := r.destinations[string(m.Dest)]
+	h, ok := r.destinations[string(sub.dest)]
 	r.Unlock()
 	if !ok {
+		logger.Noticef("stomp: unsubscribe %s: destination not found: %s",
+			string(m.ID),
+			string(sub.dest),
+		)
 		return errNoDestination
 	}
+
+	logger.Noticef("stomp: unsubscribe %s: successful: destination %s",
+		string(m.ID),
+		string(sub.dest),
+	)
 
 	defer r.collect(h)
 	return h.unsubscribe(sub, m)
@@ -111,9 +123,13 @@ func (r *router) ack(sess *session, m *stomp.Message) {
 	sess.Unlock()
 
 	if ok {
-		logger.Debugf("ack %s: successful", string(m.ID))
+		logger.Verbosef("stomp: ack %s: successful",
+			string(m.ID),
+		)
 	} else {
-		logger.Warningf("ack %s: message not found", string(m.ID))
+		logger.Noticef("stomp: ack %s: message not found",
+			string(m.ID),
+		)
 	}
 
 	// if the subscription is still active, check the prefetch
@@ -137,9 +153,13 @@ func (r *router) nack(sess *session, m *stomp.Message) {
 	delete(sess.ack, string(m.ID))
 
 	if ok {
-		logger.Debugf("nack %s: successful", string(m.ID))
+		logger.Verbosef("stomp: nack %s: successful",
+			string(m.ID),
+		)
 	} else {
-		logger.Warningf("nack %s: message not found", string(m.ID))
+		logger.Noticef("stomp: nack %s: message not found",
+			string(m.ID),
+		)
 	}
 
 	// if the subscription is still active, check the prefetch

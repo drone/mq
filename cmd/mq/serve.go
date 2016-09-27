@@ -70,7 +70,7 @@ func serve(c *cli.Context) error {
 		c.Int("level"),
 	)
 	logger.SetLogger(logs)
-	logger.Warningf("stomp: starting server")
+	logger.Noticef("stomp: starting server")
 
 	server := server.NewServer(opts...)
 	http.HandleFunc(path.Join("/", base, "meta/sessions"), server.HandleSessions)

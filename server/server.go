@@ -29,7 +29,7 @@ func NewServer(options ...Option) *Server {
 
 // Serve accepts incoming net.Conn requests.
 func (s *Server) Serve(conn net.Conn) {
-	logger.Debugf("stomp: successfully opened socket connection.")
+	logger.Verbosef("stomp: successfully opened socket connection.")
 
 	session := requestSession()
 	session.peer = stomp.Conn(conn)
@@ -38,7 +38,7 @@ func (s *Server) Serve(conn net.Conn) {
 		if r := recover(); r != nil {
 			logger.Warningf("stomp: unexpected panic: %s", r)
 		}
-		logger.Debugf("stomp: successfully closed socket connection.")
+		logger.Verbosef("stomp: successfully closed socket connection.")
 
 		s.router.disconnect(session)
 		session.peer.Close()
@@ -53,7 +53,7 @@ func (s *Server) Serve(conn net.Conn) {
 // ServeHTTP accepts incoming http.Request, upgrades to a websocket and
 // begins sending and receiving STOMP messages.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger.Debugf("stomp: handle websocket request.")
+	logger.Verbosef("stomp: handle websocket request.")
 	websocket.Handler(func(conn *websocket.Conn) {
 		s.Serve(conn)
 	}).ServeHTTP(w, r)
