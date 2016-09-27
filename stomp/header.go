@@ -76,6 +76,21 @@ func (h *Header) Add(name, data []byte) {
 	h.itemc++
 }
 
+// Index returns the keypair at index i.
+func (h *Header) Index(i int) (k, v []byte) {
+	if i > h.itemc {
+		return
+	}
+	k = h.items[i].name
+	v = h.items[i].data
+	return
+}
+
+// Len returns the header length.
+func (h *Header) Len() int {
+	return h.itemc
+}
+
 func (h *Header) grow() {
 	if h.itemc > defaultHeaderLen-1 {
 		h.items = append(h.items, item{})

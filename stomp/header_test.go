@@ -24,13 +24,16 @@ func TestHeader(t *testing.T) {
 
 		// the default list length is 5 and will be expanded as the
 		// list grows. This check verifies the list grows as expected.
-		if header.itemc != i+1 {
+		if header.Len() != i+1 {
 			t.Errorf("Want header length %d, got %d", i+1, header.itemc)
 		}
 
 		// this check verifies header key pairs were added to the list
 		// and can can be retrieved by header name
 		if got := header.Field(keyb); !bytes.Equal(got, valb) {
+			t.Errorf("Want header value %q, got %q", val, string(got))
+		}
+		if _, got := header.Index(i); !bytes.Equal(got, valb) {
 			t.Errorf("Want header value %q, got %q", val, string(got))
 		}
 	}

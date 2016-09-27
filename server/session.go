@@ -14,8 +14,13 @@ type session struct {
 
 	sub map[string]*subscription
 	ack map[string]*stomp.Message
+	msg *stomp.Message
 
 	sync.Mutex
+}
+
+func (s *session) init(m *stomp.Message) {
+	s.msg = m
 }
 
 // send writes the message to the transport.
@@ -34,8 +39,6 @@ func (s *session) subs(m *stomp.Message) *subscription {
 	sub.session = s
 
 	if len(m.Selector) != 0 {
-		// TODO we should parse this somewhere else so we can
-		// return an error message to the client
 		sub.selector, _ = selector.Parse(m.Selector)
 	}
 
@@ -64,6 +67,7 @@ func (s *session) reset() {
 // release releases the session to the pool.
 func (s *session) release() {
 	s.reset()
+	s.msg.Release()
 	sessionPool.Put(s)
 }
 

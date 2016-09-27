@@ -62,14 +62,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // HandleSessions writes a JSON-encoded list of sessions to the http.Request.
 func (s *Server) HandleSessions(w http.ResponseWriter, r *http.Request) {
 	type sessionResp struct {
-		Addr string `json:"address"`
+		Addr    string            `json:"address"`
+		User    string            `json:"username"`
+		Headers map[string]string `json:"headers"`
 	}
 
 	var sessions []sessionResp
 	s.router.RLock()
 	for sess := range s.router.sessions {
+		headers := map[string]string{}
+		for i := 0; i < sess.msg.Header.Len(); i++ {
+			k, v := sess.msg.Header.Index(i)
+			headers[string(k)] = string(v)
+		}
 		sessions = append(sessions, sessionResp{
-			Addr: sess.peer.Addr(),
+			Addr:    sess.peer.Addr(),
+			User:    string(sess.msg.User),
+			Headers: headers,
 		})
 	}
 	s.router.RUnlock()

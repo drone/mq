@@ -193,6 +193,7 @@ func (r *router) serve(session *session) error {
 			return err
 		}
 	}
+	session.init(message)
 
 	r.Lock()
 	r.sessions[session] = struct{}{}
