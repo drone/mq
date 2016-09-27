@@ -108,13 +108,21 @@ func (r *router) ack(sess *session, m *stomp.Message) {
 	sess.Lock()
 	ack, ok := sess.ack[string(m.ID)]
 	delete(sess.ack, string(m.ID))
+	sess.Unlock()
+
+	if ok {
+		logger.Debugf("ack %s: successful", string(m.ID))
+	} else {
+		logger.Warningf("ack %s: message not found", string(m.ID))
+	}
 
 	// if the subscription is still active, check the prefetch
 	// count and decrement pending prefetches.
 	// TODO this is probably not threadsafe. need to lock the subscription
-	sub, ok := sess.sub[string(ack.Dest)]
+	sess.Lock()
+	sub, ok := sess.sub[string(ack.Subs)]
 	if ok && sub.prefetch != 0 && sub.pending > 0 {
-		sub.prefetch--
+		sub.pending--
 	}
 	sess.Unlock()
 
@@ -128,12 +136,18 @@ func (r *router) nack(sess *session, m *stomp.Message) {
 	nack, ok := sess.ack[string(m.ID)]
 	delete(sess.ack, string(m.ID))
 
+	if ok {
+		logger.Debugf("nack %s: successful", string(m.ID))
+	} else {
+		logger.Warningf("nack %s: message not found", string(m.ID))
+	}
+
 	// if the subscription is still active, check the prefetch
 	// count and decrement pending prefetches.
 	// TODO this is probably not threadsafe. need to lock the subscription
-	sub, subscribed := sess.sub[string(nack.Dest)]
+	sub, subscribed := sess.sub[string(nack.Subs)]
 	if subscribed && sub.prefetch != 0 && sub.pending > 0 {
-		sub.prefetch--
+		sub.pending--
 	}
 	sess.Unlock()
 

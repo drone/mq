@@ -111,6 +111,7 @@ func (q *queue) process() error {
 				sub.pending++
 			}
 			if sub.ack {
+				m.Subs = sub.id
 				m.Ack = stomp.Rand()
 				sub.session.Lock()
 				sub.session.ack[string(m.Ack)] = m.Copy()
