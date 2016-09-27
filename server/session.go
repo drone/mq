@@ -57,6 +57,7 @@ func (s *session) unsub(sub *subscription) {
 
 // reset the session properties to zero values.
 func (s *session) reset() {
+	s.msg = nil
 	s.peer = nil
 	for id := range s.sub {
 		delete(s.sub, id)
@@ -69,7 +70,6 @@ func (s *session) reset() {
 // release releases the session to the pool.
 func (s *session) release() {
 	s.reset()
-	s.msg.Release()
 	sessionPool.Put(s)
 }
 
