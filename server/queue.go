@@ -102,7 +102,6 @@ func (q *queue) process() error {
 				}
 			}
 
-			// evaluate against prefetch counts
 			if sub.prefetch != 0 && sub.prefetch == sub.pending {
 				continue
 			}

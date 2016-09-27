@@ -27,6 +27,7 @@ type handler interface {
 	subscribe(*subscription, *stomp.Message) error
 	unsubscribe(*subscription, *stomp.Message) error
 	disconnect(*session) error
+	process() error
 	recycle() bool
 }
 
@@ -135,12 +136,24 @@ func (r *router) ack(sess *session, m *stomp.Message) {
 	// if the subscription is still active, check the prefetch
 	// count and decrement pending prefetches.
 	// TODO this is probably not threadsafe. need to lock the subscription
+	// in the event that sub.prefetch is being accessed at the same time.
 	sess.Lock()
 	sub, ok := sess.sub[string(ack.Subs)]
 	if ok && sub.prefetch != 0 && sub.pending > 0 {
 		sub.pending--
 	}
 	sess.Unlock()
+
+	// if prefetch is enabled for the subscription we should re-process
+	// the queue now that the subscription pending ack cound is reduced.
+	if ok && sub.prefetch != 0 {
+		r.RLock()
+		h, ok := r.destinations[string(sub.dest)]
+		r.RUnlock()
+		if ok {
+			h.process()
+		}
+	}
 
 	// if r.storage != nil {
 	// 	r.storage.delete(m)

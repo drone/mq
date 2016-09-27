@@ -111,6 +111,10 @@ func (t *topic) disconnect(s *session) error {
 	return nil
 }
 
+func (t *topic) process() error {
+	return nil
+}
+
 func (t *topic) restore(m *stomp.Message) error {
 	return nil
 }
