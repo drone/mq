@@ -224,7 +224,7 @@ func (c *Client) handleMessage(m *Message) {
 		)
 		return
 	}
-	go handler.Handle(m)
+	handler.Handle(m)
 }
 
 func (c *Client) sendMessage(m *Message) error {
