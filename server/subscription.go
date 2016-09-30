@@ -9,6 +9,8 @@ import (
 // subscription represents a session subscription to a
 // broker topic or queue.
 type subscription struct {
+	mu sync.Mutex
+
 	id       []byte
 	dest     []byte
 	ack      bool
@@ -33,6 +35,30 @@ func (s *subscription) reset() {
 func (s *subscription) release() {
 	s.reset()
 	subscriptionPool.Put(s)
+}
+
+// Pending returns the pending message count.
+func (s *subscription) Pending() (i int) {
+	s.mu.Lock()
+	i = s.pending
+	s.mu.Unlock()
+	return
+}
+
+// PendingIncr increments the pending message count.
+func (s *subscription) PendingIncr() {
+	s.mu.Lock()
+	s.pending++
+	s.mu.Unlock()
+}
+
+// PendingDecr decrements the pending message count.
+func (s *subscription) PendingDecr() {
+	s.mu.Lock()
+	if s.pending != 0 {
+		s.pending--
+	}
+	s.mu.Unlock()
 }
 
 //

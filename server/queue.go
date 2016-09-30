@@ -102,12 +102,12 @@ func (q *queue) process() error {
 				}
 			}
 
-			if sub.prefetch != 0 && sub.prefetch == sub.pending {
+			if sub.prefetch != 0 && sub.prefetch == sub.Pending() {
 				continue
 			}
 			// increment the pending prefectch
 			if sub.prefetch != 0 {
-				sub.pending++
+				sub.PendingIncr()
 			}
 			if sub.ack {
 				m.Subs = sub.id

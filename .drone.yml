@@ -6,16 +6,15 @@ pipeline:
   test:
     image: golang:1.7.1-alpine
     commands:
+      - go install github.com/drone/mq/cmd/mq
       - go test -cover -v github.com/drone/mq/stomp/...
       - go test -cover -v github.com/drone/mq/server/...
 
   build:
     image: golang:1.7.1-alpine
-    environment:
-      - CGO_ENABLED=0
-    commands:
-      - go install github.com/drone/mq/cmd/mq
-      - cp /go/bin/mq .
+    commands: ./build.sh
+    where:
+      event: [ tag, push ]
 
   docker:
     image: plugins/docker
@@ -24,6 +23,12 @@ pipeline:
     when:
       branch: master
       event: push
+
+  release:
+    image: plugins/github-release
+    files: release/*.tar.gz
+    when:
+      event: tag
 
   gitter:
     image: plugins/gitter

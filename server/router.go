@@ -139,8 +139,8 @@ func (r *router) ack(sess *session, m *stomp.Message) {
 	// in the event that sub.prefetch is being accessed at the same time.
 	sess.Lock()
 	sub, ok := sess.sub[string(ack.Subs)]
-	if ok && sub.prefetch != 0 && sub.pending > 0 {
-		sub.pending--
+	if ok && sub.Pending() > 0 {
+		sub.PendingDecr()
 	}
 	sess.Unlock()
 
@@ -177,10 +177,9 @@ func (r *router) nack(sess *session, m *stomp.Message) {
 
 	// if the subscription is still active, check the prefetch
 	// count and decrement pending prefetches.
-	// TODO this is probably not threadsafe. need to lock the subscription
 	sub, subscribed := sess.sub[string(nack.Subs)]
-	if subscribed && sub.prefetch != 0 && sub.pending > 0 {
-		sub.pending--
+	if subscribed && sub.Pending() > 0 {
+		sub.PendingDecr()
 	}
 	sess.Unlock()
 

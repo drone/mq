@@ -72,7 +72,7 @@ func (c *connPeer) close() error {
 		close(c.done)
 		close(c.incoming)
 		close(c.outgoing)
-		return c.drain()
+		return nil
 	}
 }
 
@@ -108,18 +108,20 @@ loop:
 		case <-tick:
 			c.conn.SetWriteDeadline(time.Now().Add(deadline))
 			if err := c.writer.Flush(); err != nil {
-				return
+				break loop
 			}
 			c.conn.SetWriteDeadline(never)
 		case msg, ok := <-messages:
 			if !ok {
-				return
+				break loop
 			}
 			writeTo(c.writer, msg)
 			c.writer.WriteByte(0)
 			msg.Release()
 		}
 	}
+
+	c.drain()
 }
 
 func (c *connPeer) drain() error {
