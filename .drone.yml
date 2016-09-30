@@ -12,9 +12,8 @@ pipeline:
 
   build:
     image: golang:1.7.1-alpine
-    commands:
-      - ./build.sh
-    where:
+    commands: ./build.sh
+    when:
       event: [ tag, push ]
 
   docker:
