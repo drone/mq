@@ -1,6 +1,9 @@
-#!/bin/sh -e -x
+#!/bin/sh
 export CGO_ENABLED=0
-exit 1
+
+set -e
+set -x
+
 # compile lgtm for all architectures
 GOOS=linux   GOARCH=amd64 go build -o ./release/linux_amd64/mq   github.com/drone/mq/cmd/mq
 GOOS=linux   GOARCH=386   go build -o ./release/linux_386/mq     github.com/drone/mq/cmd/mq
