@@ -12,7 +12,8 @@ pipeline:
 
   build:
     image: golang:1.7.1-alpine
-    commands: ./build.sh
+    commands:
+      - ./build.sh
     where:
       event: [ tag, push ]
 
