@@ -8,6 +8,7 @@ import (
 
 	"github.com/drone/mq/stomp"
 
+	"github.com/dchest/uniuri"
 	"github.com/urfave/cli"
 )
 
@@ -35,6 +36,11 @@ var comandBench = cli.Command{
 					Value: 100000,
 				},
 				cli.IntFlag{
+					Name:  "message-size",
+					Usage: "size of message payload in bytes",
+					Value: 100,
+				},
+				cli.IntFlag{
 					Name:  "client-count",
 					Usage: "number of client connections to use",
 					Value: 1,
@@ -58,6 +64,11 @@ var comandBench = cli.Command{
 					Usage: "number of messages to send",
 					Value: 100000,
 				},
+				cli.IntFlag{
+					Name:  "message-size",
+					Usage: "size of message payload in bytes",
+					Value: 100,
+				},
 			},
 		},
 	},
@@ -73,7 +84,10 @@ func bench(c *cli.Context) error {
 		wg sync.WaitGroup
 
 		messages = c.Int("message-count")
+		size     = c.Int("message-size")
 		topic    = c.String("topic")
+
+		payload = []byte(uniuri.NewLen(size))
 	)
 
 	handler := func(m *stomp.Message) {
@@ -90,7 +104,7 @@ func bench(c *cli.Context) error {
 	wg.Add(messages)
 
 	for i := 0; i < messages; i++ {
-		err = client.Send(topic, []byte("ping"))
+		err = client.Send(topic, payload)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -119,8 +133,11 @@ func benchPub(c *cli.Context) error {
 		wg sync.WaitGroup
 
 		messages = c.Int("message-count")
+		size     = c.Int("message-size")
 		count    = c.Int("client-count")
 		topic    = c.String("topic")
+
+		payload = []byte(uniuri.NewLen(size))
 
 		clients = make([]*stomp.Client, count)
 	)
@@ -138,7 +155,7 @@ func benchPub(c *cli.Context) error {
 	// messages in batch using the specified client.
 	batch := func(client *stomp.Client, topic string, messages int) (err error) {
 		for i := 0; i < messages; i++ {
-			err = client.Send(topic, []byte("ping"))
+			err = client.Send(topic, payload)
 			if err != nil {
 				log.Fatal(err)
 			}

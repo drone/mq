@@ -7,8 +7,10 @@ import (
 	"time"
 )
 
-// default read and write buffer size.
-const bufferSize = 32 * 1024
+const (
+	bufferSize  = 32 << 10 // default buffer size 32KB
+	bufferLimit = 32 << 15 // default buffer limit 1MB
+)
 
 var (
 	never    time.Time
@@ -80,6 +82,9 @@ func (c *connPeer) readInto(messages chan<- *Message) {
 	defer c.close()
 
 	for {
+		// lim := io.LimitReader(c.conn, bufferLimit)
+		// buf := bufio.NewReaderSize(lim, bufferSize)
+
 		buf, err := c.reader.ReadBytes(0)
 		if err != nil {
 			break

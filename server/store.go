@@ -1,5 +1,7 @@
 package server
 
+// http://oldblog.antirez.com/post/redis-persistence-demystified.html
+
 import (
 	"github.com/drone/mq/stomp"
 
