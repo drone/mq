@@ -3,6 +3,8 @@ package stomp
 import (
 	"bytes"
 	"testing"
+
+	"golang.org/x/net/context"
 )
 
 func TestMessageCopy(t *testing.T) {
@@ -98,6 +100,7 @@ func TestMessageRelease(t *testing.T) {
 	m.Retain = RetainAll
 	m.Receipt = []byte("1")
 	m.Body = []byte("hello world")
+	m.ctx = context.Background()
 	m.Header.Add([]byte("key"), []byte("val"))
 	m.Release()
 
@@ -145,5 +148,8 @@ func TestMessageRelease(t *testing.T) {
 	}
 	if m.Header.itemc != 0 {
 		t.Errorf("expect Header to reset to zero value")
+	}
+	if m.ctx != nil {
+		t.Errorf("expect Context to reset to zero value")
 	}
 }

@@ -52,3 +52,25 @@ var (
 	RetainAll    = []byte("all")
 	RetainRemove = []byte("remove")
 )
+
+var headerLookup = map[string]struct{}{
+	"accept-version": struct{}{},
+	"ack":            struct{}{},
+	"expires":        struct{}{},
+	"destination":    struct{}{},
+	"host":           struct{}{},
+	"login":          struct{}{},
+	"passcode":       struct{}{},
+	"id":             struct{}{},
+	"message-id":     struct{}{},
+	"persist":        struct{}{},
+	"prefetch-count": struct{}{},
+	"receipt":        struct{}{},
+	"receipt-id":     struct{}{},
+	"retain":         struct{}{},
+	"selector":       struct{}{},
+	"server":         struct{}{},
+	"session":        struct{}{},
+	"subscription":   struct{}{},
+	"version":        struct{}{},
+}

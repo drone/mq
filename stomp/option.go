@@ -3,6 +3,7 @@ package stomp
 import (
 	"math/rand"
 	"strconv"
+	"strings"
 )
 
 // MessageOption configures message options.
@@ -19,10 +20,13 @@ func WithCredentials(username, password string) MessageOption {
 // WithHeader returns a MessageOption which sets a header.
 func WithHeader(key, value string) MessageOption {
 	return func(m *Message) {
-		m.Header.Add(
-			[]byte(key),
-			[]byte(value),
-		)
+		_, ok := headerLookup[strings.ToLower(key)]
+		if !ok {
+			m.Header.Add(
+				[]byte(key),
+				[]byte(value),
+			)
+		}
 	}
 }
 
@@ -30,10 +34,13 @@ func WithHeader(key, value string) MessageOption {
 func WithHeaders(headers map[string]string) MessageOption {
 	return func(m *Message) {
 		for key, value := range headers {
-			m.Header.Add(
-				[]byte(key),
-				[]byte(value),
-			)
+			_, ok := headerLookup[strings.ToLower(key)]
+			if !ok {
+				m.Header.Add(
+					[]byte(key),
+					[]byte(value),
+				)
+			}
 		}
 	}
 }

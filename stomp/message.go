@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"strconv"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 // Message represents a parsed STOMP message.
@@ -27,6 +29,8 @@ type Message struct {
 	Selector []byte // selector header
 	Body     []byte
 	Header   *Header // custom headers
+
+	ctx context.Context
 }
 
 // Copy returns a copy of the Message.
@@ -47,6 +51,7 @@ func (m *Message) Copy() *Message {
 	c.Receipt = m.Receipt
 	c.Expires = m.Expires
 	c.Body = m.Body
+	c.ctx = m.ctx
 	c.Header.itemc = m.Header.itemc
 	copy(c.Header.items, m.Header.items)
 	return c
@@ -99,7 +104,24 @@ func (m *Message) Reset() {
 	m.Receipt = m.Receipt[:0]
 	m.Expires = m.Expires[:0]
 	m.Body = m.Body[:0]
+	m.ctx = nil
 	m.Header.reset()
+}
+
+// Context returns the request's context.
+func (m *Message) Context() context.Context {
+	if m.ctx != nil {
+		return m.ctx
+	}
+	return context.Background()
+}
+
+// WithContext returns a shallow copy of m with its context changed
+// to ctx. The provided ctx must be non-nil.
+func (m *Message) WithContext(ctx context.Context) *Message {
+	c := m.Copy()
+	c.ctx = ctx
+	return c
 }
 
 // Unmarshal parses the JSON-encoded body of the message and
