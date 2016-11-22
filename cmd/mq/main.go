@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/drone/mq/logger"
 	"github.com/drone/mq/stomp"
 
+	"github.com/tidwall/redlog"
 	"github.com/urfave/cli"
 )
 
@@ -32,6 +34,12 @@ func main() {
 			Name:   "password, p",
 			Usage:  "stomp server password",
 			EnvVar: "STOMP_PASSWORD",
+		},
+		cli.IntFlag{
+			Name:   "level",
+			Usage:  "logging level",
+			Value:  2,
+			EnvVar: "STOMP_LOG_LEVEL",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -111,6 +119,12 @@ func setup(c *cli.Context) (err error) {
 // create and connect the STOMP client.
 func createClient(c *cli.Context) (*stomp.Client, error) {
 	target := c.GlobalString("server")
+
+	logs := redlog.New(os.Stderr)
+	logs.SetLevel(
+		c.GlobalInt("level"),
+	)
+	logger.SetLogger(logs)
 
 	cli, err := stomp.Dial(target)
 	if err != nil {

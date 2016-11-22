@@ -69,12 +69,6 @@ var comandServe = cli.Command{
 			Value:  "/",
 			EnvVar: "STOMP_BASE",
 		},
-		cli.IntFlag{
-			Name:   "level",
-			Usage:  "logging level",
-			Value:  2,
-			EnvVar: "STOMP_LOG_LEVEL",
-		},
 	},
 }
 
@@ -106,7 +100,7 @@ func serve(c *cli.Context) error {
 
 	logs := redlog.New(os.Stderr)
 	logs.SetLevel(
-		c.Int("level"),
+		c.GlobalInt("level"),
 	)
 	logger.SetLogger(logs)
 	logger.Noticef("stomp: starting server")

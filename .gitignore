@@ -27,6 +27,7 @@ _testmain.go
 cmd/mq/mq
 release
 
+USE_CASES.md
 stomp/cron/*.go
 server/store/*.go
 server/aof/*.go
