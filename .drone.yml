@@ -24,6 +24,14 @@ pipeline:
       branch: master
       event: push
 
+  feature:
+    image: plugins/docker
+    repo: drone/mq
+    tags: [ 1.0.1 ]
+    when:
+      branch: feature/reconnect
+      event: push
+
   release:
     image: plugins/github-release
     files: release/*.tar.gz
