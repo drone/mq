@@ -39,13 +39,13 @@ func dialWebsocket(target *url.URL) (net.Conn, error) {
 	}
 	switch origin.Scheme {
 	case protoWS:
-		origin.Scheme = "http"
+		origin.Scheme = protoHTTP
 	case protoWSS:
-		origin.Scheme = "https"
+		origin.Scheme = protoHTTPS
 	}
 	return websocket.Dial(target.String(), "", origin.String())
 }
 
 func dialSocket(target *url.URL) (net.Conn, error) {
-	return net.Dial("tcp", target.Host)
+	return net.Dial(protoTCP, target.Host)
 }
