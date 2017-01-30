@@ -177,7 +177,12 @@ func (c *Client) listen() {
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Warningf("stomp client: recover panic: %s", r)
-			c.done <- r.(error)
+			err, ok := r.(error)
+			if !ok {
+				c.done <- fmt.Errorf("%v", r)
+			} else {
+				c.done <- err
+			}
 		}
 	}()
 
