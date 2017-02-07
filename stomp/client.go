@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -179,8 +180,10 @@ func (c *Client) listen() {
 			logger.Warningf("stomp client: recover panic: %s", r)
 			err, ok := r.(error)
 			if !ok {
+				logger.Warningf("%v: %s", r, debug.Stack())
 				c.done <- fmt.Errorf("%v", r)
 			} else {
+				logger.Warningf("%s", err)
 				c.done <- err
 			}
 		}
